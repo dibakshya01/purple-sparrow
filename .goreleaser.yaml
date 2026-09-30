@@ -1,0 +1,42 @@
+# goreleaser config for Purple Sparrow single-binary releases.
+# Validate with: go run github.com/goreleaser/goreleaser/v2@latest check
+version: 2
+
+project_name: purple-sparrow
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: purplesparrow
+    main: ./cmd/purplesparrow
+    binary: purplesparrow
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/dibakshya01/purple-sparrow/internal/buildinfo.Version={{.Version}}
+      - -X github.com/dibakshya01/purple-sparrow/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/dibakshya01/purple-sparrow/internal/buildinfo.Date={{.Date}}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+
+release:
+  draft: true

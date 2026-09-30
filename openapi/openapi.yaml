@@ -1,0 +1,88 @@
+# Purple Sparrow API — OpenAPI 3.1 source of truth (ADR-0004).
+# M0 seeds the document and the error-envelope schema. From M1, handler types and
+# the MCP tool surface are generated/derived from this file (`make generate`).
+openapi: 3.1.0
+info:
+  title: Purple Sparrow API
+  version: 0.0.0
+  description: Agent-native backend platform. REST surface; the same surface is exposed as MCP tools.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+
+servers:
+  - url: http://127.0.0.1:8787
+
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, const: ok }
+  /readyz:
+    get:
+      operationId: getReady
+      summary: Readiness probe
+      responses:
+        "200":
+          description: Ready to serve
+        "503":
+          description: Not ready
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+  /v1:
+    get:
+      operationId: getServiceInfo
+      summary: Service metadata (name, version, tier)
+      responses:
+        "200":
+          description: Service metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: { type: string }
+                  version: { type: string }
+                  tier: { type: string }
+                  docs: { type: string }
+
+components:
+  schemas:
+    ErrorEnvelope:
+      type: object
+      description: The agent-native error envelope (ADR-0006). Returned on every non-2xx.
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Stable, machine-readable error code.
+            message:
+              type: string
+              description: Human-readable summary (never contains internal detail).
+            remediation:
+              type: string
+              description: How to fix it — written for an agent to act on.
+            next_actions:
+              type: array
+              items: { type: string }
+              description: Concrete next steps (often tool/endpoint calls).
+            doc_ref:
+              type: string
+              description: Path into the docs for this error.
+            request_id:
+              type: string
+              description: Correlates with server logs and the X-Request-Id header.

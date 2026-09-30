@@ -1,0 +1,19 @@
+# Private planning — never commit / never push to GitHub
+/_planning/
+
+# Build output (anchored to root so cmd/purplesparrow/ is NOT ignored)
+/dist/
+/bin/
+/purplesparrow
+*.exe
+
+# Runtime data dir
+/.purplesparrow/
+
+# OS
+.DS_Store
+
+# Go
+*.test
+*.out
+/vendor/
