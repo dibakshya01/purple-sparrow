@@ -12,6 +12,7 @@ import (
 
 	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
 	"github.com/dibakshya01/purple-sparrow/internal/apierr"
+	"github.com/dibakshya01/purple-sparrow/internal/auth"
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
@@ -23,11 +24,11 @@ import (
 // Deps are the service dependencies for the data plane. When Catalog is nil the
 // data routes are not mounted (M0-only server, e.g. in tests).
 type Deps struct {
-	Catalog  *catalog.Service
-	Records  *records.Service
-	Policy   *policy.Service
-	Meta     *meta.Service
-	AdminKey string
+	Catalog *catalog.Service
+	Records *records.Service
+	Policy  *policy.Service
+	Meta    *meta.Service
+	Auth    *auth.Service
 }
 
 // Server owns the HTTP handler and its request-scoped dependencies.
@@ -74,10 +75,16 @@ func (s *Server) buildRouter() http.Handler {
 	r.Get("/readyz", s.handleReadyz)
 	r.Get("/v1", s.handleServiceInfo)
 
+	if s.deps.Auth != nil {
+		// JWKS is public (no principal needed) so third parties can verify tokens.
+		r.Get("/.well-known/jwks.json", s.handleJWKS)
+	}
+
 	if s.deps.Catalog != nil {
 		r.Group(func(g chi.Router) {
-			g.Use(principalMiddleware(s.deps.AdminKey))
+			g.Use(principalMiddleware(s.deps.Auth))
 			s.mountDataRoutes(g)
+			s.mountAuthRoutes(g)
 		})
 	}
 

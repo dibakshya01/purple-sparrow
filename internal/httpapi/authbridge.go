@@ -1,32 +1,29 @@
 package httpapi
 
 import (
-	"crypto/subtle"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/dibakshya01/purple-sparrow/internal/apierr"
+	"github.com/dibakshya01/purple-sparrow/internal/auth"
 	"github.com/dibakshya01/purple-sparrow/internal/principal"
 )
 
-// principalMiddleware resolves the caller's principal (M1 bridge; ADR notes M2
-// replaces it with full JWT/key auth). Rules:
-//   - a presented admin key that matches -> project_admin;
-//   - a presented credential that does NOT match -> 401 (fail closed, explicit,
-//     never a silent downgrade that would mask credential probing);
-//   - no credential -> anon.
-func principalMiddleware(adminKey string) func(http.Handler) http.Handler {
+// principalMiddleware resolves the caller's principal via the auth service:
+// a JWT or API key -> its principal; a presented-but-invalid credential -> 401
+// (fail closed, never a silent downgrade); no credential -> anon.
+func principalMiddleware(a *auth.Service) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			presented := bearerOrHeader(r)
-			var p principal.Principal
-			switch {
-			case presented == "":
-				p = principal.Anon()
-			case adminKey != "" && constantEq(presented, adminKey):
-				p = principal.Principal{Roles: []string{principal.RoleProjectAdmin}}
-			default:
-				apierr.Write(w, r, invalidCredentials())
+			p, err := a.Resolve(r.Context(), presented)
+			if err != nil {
+				if errors.Is(err, auth.ErrInvalidCredentials) {
+					apierr.Write(w, r, invalidCredentials())
+					return
+				}
+				apierr.Write(w, r, apierr.Internal("").WithInternal(err))
 				return
 			}
 			ctx := principal.WithContext(r.Context(), p)
@@ -45,13 +42,9 @@ func bearerOrHeader(r *http.Request) string {
 	return strings.TrimSpace(r.Header.Get("X-API-Key"))
 }
 
-func constantEq(a, b string) bool {
-	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
-}
-
 func invalidCredentials() *apierr.Error {
 	return apierr.New(http.StatusUnauthorized, "invalid_credentials",
 		"The presented credential was not recognized.",
-		"Provide a valid admin API key as `Authorization: Bearer <key>` or `X-API-Key`, or omit it to act as anon.",
+		"Provide a valid access token or API key as `Authorization: Bearer <value>` (or `X-API-Key`), or omit it to act as anon.",
 		"/docs/errors#invalid_credentials")
 }

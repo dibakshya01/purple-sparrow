@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
+	"github.com/dibakshya01/purple-sparrow/internal/auth"
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
 	"github.com/dibakshya01/purple-sparrow/internal/data"
@@ -34,10 +35,17 @@ func dataServer(t *testing.T) *Server {
 	cat := catalog.New(eng)
 	pol := policy.NewService(eng)
 	enf := policy.NewEnforcer(eng)
+	authSvc, err := auth.NewService(context.Background(), eng)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := authSvc.SeedAdminKey(context.Background(), testAdminKey); err != nil {
+		t.Fatal(err)
+	}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	return New(config.Defaults(), logger, Deps{
 		Catalog: cat, Records: records.New(eng, cat, enf), Policy: pol,
-		Meta: meta.New(eng, cat, pol), AdminKey: testAdminKey,
+		Meta: meta.New(eng, cat, pol), Auth: authSvc,
 	})
 }
 

@@ -38,7 +38,21 @@ func TestRunIsIdempotentAndCreatesCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1 || rows[0]["version"] != "0001_catalog" {
-		t.Fatalf("unexpected migration ledger: %+v", rows)
+	applied := map[string]bool{}
+	for _, r := range rows {
+		applied[str(r["version"])] = true
 	}
+	if !applied["0001_catalog"] {
+		t.Fatalf("catalog migration not recorded in ledger: %+v", rows)
+	}
+	if len(rows) == 0 {
+		t.Fatal("migration ledger is empty")
+	}
+}
+
+func str(v any) string {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
 }

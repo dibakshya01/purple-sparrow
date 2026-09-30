@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
+	"github.com/dibakshya01/purple-sparrow/internal/auth"
 	"github.com/dibakshya01/purple-sparrow/internal/buildinfo"
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
@@ -64,8 +65,13 @@ func run() error {
 	rec := records.New(eng, cat, enf)
 	mta := meta.New(eng, cat, pol)
 
-	// Admin key bridge (M1). If unset, generate an ephemeral one and log it so a
-	// solo dev has admin access; production sets PS_ADMIN_API_KEY explicitly.
+	authSvc, err := auth.NewService(context.Background(), eng)
+	if err != nil {
+		return err
+	}
+
+	// Seed an admin API key. If PS_ADMIN_API_KEY is unset, generate an ephemeral
+	// one and log it so a solo dev has admin access; production sets it explicitly.
 	adminKey := cfg.AdminAPIKey
 	if adminKey == "" {
 		adminKey = "ps_sk_" + idgen.NewUUID()
@@ -73,13 +79,16 @@ func run() error {
 			"admin_api_key", adminKey,
 			"hint", "set PS_ADMIN_API_KEY to keep it stable across restarts")
 	}
+	if err := authSvc.SeedAdminKey(context.Background(), adminKey); err != nil {
+		return err
+	}
 
 	srv := httpapi.New(cfg, logger, httpapi.Deps{
-		Catalog:  cat,
-		Records:  rec,
-		Policy:   pol,
-		Meta:     mta,
-		AdminKey: adminKey,
+		Catalog: cat,
+		Records: rec,
+		Policy:  pol,
+		Meta:    mta,
+		Auth:    authSvc,
 	})
 	httpServer := &http.Server{
 		Addr:    cfg.Addr,

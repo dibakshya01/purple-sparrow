@@ -203,6 +203,9 @@ func (s *Service) Query(ctx context.Context, p principal.Principal, table string
 	if err != nil {
 		return nil, err
 	}
+	if rows == nil {
+		rows = []data.Row{} // always a JSON array, never null, even when empty
+	}
 	for i := range rows {
 		normalizeRow(rows[i], tc.types)
 	}
