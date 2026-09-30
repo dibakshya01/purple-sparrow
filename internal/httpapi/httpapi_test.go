@@ -15,7 +15,7 @@ import (
 
 func testServer() *Server {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return New(config.Defaults(), logger)
+	return New(config.Defaults(), logger, Deps{})
 }
 
 func TestHealthz(t *testing.T) {

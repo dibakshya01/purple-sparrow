@@ -7,6 +7,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -46,6 +47,15 @@ type Config struct {
 	LogFormat LogFormat
 	DataDir   string
 	Tier      Tier
+	// AdminAPIKey (PS_ADMIN_API_KEY, prefix ps_sk_) grants project_admin. Empty in
+	// config means "not set"; main generates an ephemeral one at boot for the solo
+	// tier and logs it. M2 replaces this bridge with full auth.
+	AdminAPIKey string
+}
+
+// DatabasePath returns the SQLite database file path within the data dir.
+func (c Config) DatabasePath() string {
+	return filepath.Join(c.DataDir, "purplesparrow.db")
 }
 
 // Defaults returns the baseline configuration before env overrides.
@@ -92,6 +102,9 @@ func Load() (Config, error) {
 	}
 	if v := env("PS_TIER"); v != "" {
 		c.Tier = Tier(strings.ToLower(v))
+	}
+	if v := env("PS_ADMIN_API_KEY"); v != "" {
+		c.AdminAPIKey = v
 	}
 
 	return c, c.Validate()

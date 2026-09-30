@@ -1,6 +1,6 @@
-// Package httpapi builds the HTTP surface: router, baseline middleware, and the
-// M0 health/metadata endpoints. Product routes (data, auth, ...) are mounted by
-// later milestones through this same server.
+// Package httpapi builds the HTTP surface: router, baseline middleware, the M0
+// health/metadata endpoints, and (when data services are wired) the M1 tables,
+// records, policies, and /meta endpoints.
 package httpapi
 
 import (
@@ -10,23 +10,38 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
 	"github.com/dibakshya01/purple-sparrow/internal/apierr"
+	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/purple-sparrow/internal/records"
 	"github.com/dibakshya01/purple-sparrow/internal/reqid"
 	"github.com/dibakshya01/purple-sparrow/internal/web"
 )
+
+// Deps are the service dependencies for the data plane. When Catalog is nil the
+// data routes are not mounted (M0-only server, e.g. in tests).
+type Deps struct {
+	Catalog  *catalog.Service
+	Records  *records.Service
+	Policy   *policy.Service
+	Meta     *meta.Service
+	AdminKey string
+}
 
 // Server owns the HTTP handler and its request-scoped dependencies.
 type Server struct {
 	cfg    config.Config
 	logger *slog.Logger
+	deps   Deps
 	ready  atomic.Bool
 	router http.Handler
 }
 
 // New constructs a Server and builds its router.
-func New(cfg config.Config, logger *slog.Logger) *Server {
-	s := &Server{cfg: cfg, logger: logger}
+func New(cfg config.Config, logger *slog.Logger, deps Deps) *Server {
+	s := &Server{cfg: cfg, logger: logger, deps: deps}
 	s.router = s.buildRouter()
 	return s
 }
@@ -40,18 +55,14 @@ func (s *Server) SetReady(ready bool) { s.ready.Store(ready) }
 func (s *Server) buildRouter() http.Handler {
 	r := chi.NewRouter()
 
-	// Order matters. request-id is outermost so every inner layer and the error
-	// envelope can reference it. recovery sits directly inside it so a panic in
-	// ANY later middleware or handler still yields an envelope carrying the
-	// request id. access-log wraps the handler to capture its status.
-	// security-headers is innermost so headers are set on the ResponseWriter
-	// before the handler (or a recovered panic response) writes.
+	// request-id outermost; recovery directly inside so any later panic still
+	// yields an envelope with the id; access-log wraps the handler; security
+	// headers innermost.
 	r.Use(reqid.Middleware)
 	r.Use(recoverer(s.logger))
 	r.Use(accessLog(s.logger))
 	r.Use(securityHeaders)
 
-	// Consistent envelope for framework-level 404/405 instead of chi defaults.
 	r.NotFound(func(w http.ResponseWriter, req *http.Request) {
 		apierr.Write(w, req, apierr.NotFound(""))
 	})
@@ -63,10 +74,33 @@ func (s *Server) buildRouter() http.Handler {
 	r.Get("/readyz", s.handleReadyz)
 	r.Get("/v1", s.handleServiceInfo)
 
-	// Dashboard placeholder at exactly "/" only. Every other unmatched path falls
-	// through to NotFound above and returns the error envelope — the file server
-	// must never shadow API routes with a plain-text 404.
+	if s.deps.Catalog != nil {
+		r.Group(func(g chi.Router) {
+			g.Use(principalMiddleware(s.deps.AdminKey))
+			s.mountDataRoutes(g)
+		})
+	}
+
+	// Dashboard placeholder at exactly "/" only; other unmatched paths -> envelope.
 	r.Get("/", web.Index().ServeHTTP)
 
 	return r
+}
+
+func (s *Server) mountDataRoutes(g chi.Router) {
+	g.Post("/v1/tables", s.handleCreateTable)
+	g.Get("/v1/tables", s.handleListTables)
+	g.Get("/v1/tables/{table}", s.handleDescribeTable)
+	g.Delete("/v1/tables/{table}", s.handleDropTable)
+
+	g.Post("/v1/tables/{table}/records", s.handleInsert)
+	g.Get("/v1/tables/{table}/records", s.handleQuery)
+	g.Get("/v1/tables/{table}/records/{id}", s.handleGetRecord)
+	g.Patch("/v1/tables/{table}/records/{id}", s.handleUpdateRecord)
+	g.Delete("/v1/tables/{table}/records/{id}", s.handleDeleteRecord)
+
+	g.Post("/v1/policies", s.handleCreatePolicy)
+	g.Get("/v1/tables/{table}/policies", s.handleListPolicies)
+
+	g.Get("/meta", s.handleMeta)
 }

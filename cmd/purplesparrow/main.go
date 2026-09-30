@@ -11,10 +11,17 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
 	"github.com/dibakshya01/purple-sparrow/internal/buildinfo"
+	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
 	"github.com/dibakshya01/purple-sparrow/internal/httpapi"
+	"github.com/dibakshya01/purple-sparrow/internal/idgen"
 	"github.com/dibakshya01/purple-sparrow/internal/observability"
+	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/purple-sparrow/internal/records"
 )
 
 func main() {
@@ -41,7 +48,39 @@ func run() error {
 		return err
 	}
 
-	srv := httpapi.New(cfg, logger)
+	// Data engine (SQLite, solo tier) + migrations.
+	eng, err := data.OpenSQLite(cfg.DatabasePath())
+	if err != nil {
+		return err
+	}
+	defer eng.Close()
+	if err := migrate.Run(context.Background(), eng); err != nil {
+		return err
+	}
+
+	cat := catalog.New(eng)
+	pol := policy.NewService(eng)
+	enf := policy.NewEnforcer(eng)
+	rec := records.New(eng, cat, enf)
+	mta := meta.New(eng, cat, pol)
+
+	// Admin key bridge (M1). If unset, generate an ephemeral one and log it so a
+	// solo dev has admin access; production sets PS_ADMIN_API_KEY explicitly.
+	adminKey := cfg.AdminAPIKey
+	if adminKey == "" {
+		adminKey = "ps_sk_" + idgen.NewUUID()
+		logger.Warn("PS_ADMIN_API_KEY not set; generated an ephemeral admin key for this run",
+			"admin_api_key", adminKey,
+			"hint", "set PS_ADMIN_API_KEY to keep it stable across restarts")
+	}
+
+	srv := httpapi.New(cfg, logger, httpapi.Deps{
+		Catalog:  cat,
+		Records:  rec,
+		Policy:   pol,
+		Meta:     mta,
+		AdminKey: adminKey,
+	})
 	httpServer := &http.Server{
 		Addr:    cfg.Addr,
 		Handler: srv.Handler(),
