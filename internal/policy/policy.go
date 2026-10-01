@@ -22,6 +22,9 @@ const (
 	ActionDelete Action = "delete"
 )
 
+// maxExprLen bounds a policy expression's source length.
+const maxExprLen = 2000
+
 func validAction(a Action) bool {
 	switch a {
 	case ActionSelect, ActionInsert, ActionUpdate, ActionDelete:
@@ -88,6 +91,12 @@ func (s *Service) Create(ctx context.Context, in CreateInput, allowedCols []stri
 	allowed := toSet(allowedCols)
 	using := strings.TrimSpace(in.Using)
 	check := strings.TrimSpace(in.Check)
+
+	// Bound expression size: a defense against a pathologically deep expression
+	// overflowing the recursive-descent parser (and nonsense input generally).
+	if len(using) > maxExprLen || len(check) > maxExprLen {
+		return nil, fmt.Errorf("%w: expression exceeds %d characters", ErrInvalidExpr, maxExprLen)
+	}
 
 	// Required-expression rules per action.
 	switch in.Action {

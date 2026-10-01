@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	_ "modernc.org/sqlite" // pure-Go SQLite driver (no CGO)
@@ -51,6 +52,15 @@ func OpenSQLite(path string) (*SQLite, error) {
 	if err := db.Ping(); err != nil {
 		_ = db.Close()
 		return nil, err
+	}
+	// The database file is the trust root (password hashes, the RSA signing key,
+	// API-key hashes). Restrict it to the owner. :memory: has no file. The
+	// -wal/-shm sidecars are protected by the 0700 data dir.
+	if path != ":memory:" {
+		if err := os.Chmod(path, 0o600); err != nil && !os.IsNotExist(err) {
+			_ = db.Close()
+			return nil, fmt.Errorf("securing database file: %w", err)
+		}
 	}
 	return &SQLite{db: db}, nil
 }

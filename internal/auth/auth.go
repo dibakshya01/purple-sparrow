@@ -143,8 +143,15 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, er
 		if perr != nil || time.Now().After(exp) {
 			return ErrInvalidRefresh
 		}
-		if _, err := q.ExecCtx(ctx, `UPDATE _ps_refresh_tokens SET used = 1 WHERE id = ?`, str(row["id"])); err != nil {
+		// Conditional consume closes the check-then-act race: on a multi-connection
+		// engine two concurrent refreshes both read used=0, but only one UPDATE
+		// where used=0 affects a row; the loser gets 0 rows and is rejected.
+		n, err := q.ExecCtx(ctx, `UPDATE _ps_refresh_tokens SET used = 1 WHERE id = ? AND used = 0`, str(row["id"]))
+		if err != nil {
 			return err
+		}
+		if n == 0 {
+			return ErrInvalidRefresh
 		}
 		urow, err := q.QueryRowCtx(ctx, `SELECT id, email, roles FROM _ps_users WHERE id = ?`, str(row["user_id"]))
 		if err != nil {

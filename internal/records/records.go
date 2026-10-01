@@ -489,11 +489,14 @@ func coerce(v any, logical string) any {
 			return int64(f)
 		}
 	case "json":
-		switch v.(type) {
-		case map[string]any, []any:
-			if b, err := json.Marshal(v); err == nil {
-				return string(b)
-			}
+		// Canonicalize ANY value to JSON text so the read-side decode is symmetric:
+		// a scalar string "true" stores as "\"true\"" and reads back as the string
+		// "true" (not the boolean true). Previously only objects/arrays were encoded.
+		if v == nil {
+			return nil
+		}
+		if b, err := json.Marshal(v); err == nil {
+			return string(b)
 		}
 	}
 	return v

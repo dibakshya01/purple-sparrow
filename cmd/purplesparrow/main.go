@@ -128,7 +128,10 @@ func run() error {
 		"version", info.Version, "commit", info.Commit,
 		"addr", cfg.Addr, "tier", string(cfg.Tier), "effective_tier", string(cfg.EffectiveTier()))
 
-	if err := os.MkdirAll(cfg.DataDir, 0o750); err != nil {
+	// 0700: the data dir holds the SQLite DB (password hashes, the RSA signing key,
+	// API-key hashes). Restricting the directory protects the DB and its -wal/-shm
+	// sidecars regardless of their individual file modes.
+	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
 		return err
 	}
 
@@ -153,14 +156,19 @@ func run() error {
 		return err
 	}
 
-	// Seed an admin API key. If PS_ADMIN_API_KEY is unset, generate an ephemeral
-	// one and log it so a solo dev has admin access; production sets it explicitly.
+	// Seed an admin API key. For the solo tier we generate an ephemeral one and log
+	// it (local-dev convenience). For any non-solo tier we refuse to boot without an
+	// explicit key rather than mint-and-log a live admin credential: a per-restart
+	// secret in production logs is both a leak and operationally useless.
 	adminKey := cfg.AdminAPIKey
 	if adminKey == "" {
+		if cfg.EffectiveTier() != config.TierSolo {
+			return fmt.Errorf("PS_ADMIN_API_KEY is required for the %q tier; refusing to generate and log an ephemeral admin credential in a non-solo deployment", cfg.EffectiveTier())
+		}
 		adminKey = "ps_sk_" + idgen.NewUUID()
-		logger.Warn("PS_ADMIN_API_KEY not set; generated an ephemeral admin key for this run",
+		logger.Warn("PS_ADMIN_API_KEY not set; generated an ephemeral admin key for this solo-tier run",
 			"admin_api_key", adminKey,
-			"hint", "set PS_ADMIN_API_KEY to keep it stable across restarts")
+			"hint", "set PS_ADMIN_API_KEY to keep it stable and out of logs")
 	}
 	if err := authSvc.SeedAdminKey(context.Background(), adminKey); err != nil {
 		return err
