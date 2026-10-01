@@ -78,6 +78,16 @@ var filterOps = map[string]string{
 	"eq": "=", "ne": "<>", "lt": "<", "lte": "<=", "gt": ">", "gte": ">=", "like": "LIKE",
 }
 
+// isTextLike reports whether a logical column type is stored as TEXT on both
+// engines (so LIKE/ILIKE is valid). Numeric types are not.
+func isTextLike(logical string) bool {
+	switch logical {
+	case "text", "uuid", "json", "timestamp":
+		return true
+	}
+	return false
+}
+
 // tableContext bundles a table's column metadata.
 type tableContext struct {
 	names    []string
@@ -171,6 +181,12 @@ func (s *Service) Query(ctx context.Context, p principal.Principal, table string
 			return nil, fmt.Errorf("%w: unknown operator %q", ErrInvalidFilter, f.Op)
 		}
 		if f.Op == "like" {
+			// `like` only applies to text-like columns. SQLite would loosely coerce a
+			// numeric column, but Postgres errors (bigint ILIKE text) -> a 500. Guard
+			// for a clean 400 on both engines.
+			if !isTextLike(tc.types[f.Column]) {
+				return nil, fmt.Errorf("%w: like only applies to text/uuid/json/timestamp columns, not %s (%s)", ErrInvalidFilter, f.Column, tc.types[f.Column])
+			}
 			// Dialect-aware so `like` is consistently case-insensitive across engines
 			// (SQLite LIKE is ASCII case-insensitive; Postgres uses ILIKE).
 			sqlOp = d.LikeOperator()
