@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
@@ -141,7 +142,9 @@ func (s *Service) Query(ctx context.Context, p principal.Principal, table string
 			}
 			ph := strings.TrimSuffix(strings.Repeat("?, ", len(list)), ", ")
 			where = append(where, d.QuoteIdent(f.Column)+" IN ("+ph+")")
-			args = append(args, list...)
+			for _, item := range list {
+				args = append(args, coerceFilterValue(item, tc.types[f.Column]))
+			}
 			continue
 		}
 		sqlOp, ok := filterOps[f.Op]
@@ -149,7 +152,7 @@ func (s *Service) Query(ctx context.Context, p principal.Principal, table string
 			return nil, fmt.Errorf("%w: unknown operator %q", ErrInvalidFilter, f.Op)
 		}
 		where = append(where, d.QuoteIdent(f.Column)+" "+sqlOp+" ?")
-		args = append(args, coerce(f.Value, tc.types[f.Column]))
+		args = append(args, coerceFilterValue(f.Value, tc.types[f.Column]))
 	}
 
 	// ORDER BY, with id as a deterministic tiebreaker.
@@ -432,6 +435,36 @@ func (s *Service) Delete(ctx context.Context, p principal.Principal, table, id s
 		return ErrRecordNotFound
 	}
 	return nil
+}
+
+// coerceFilterValue converts a filter value — which the HTTP layer delivers as a
+// string (?col=op.value) — to the column's logical type, so comparisons work on
+// both SQLite (whose loose affinity otherwise silently fails on booleans) and
+// Postgres (which would error on integer = text). Non-string values fall through
+// to the storage coercion.
+func coerceFilterValue(v any, logical string) any {
+	s, isStr := v.(string)
+	if !isStr {
+		return coerce(v, logical)
+	}
+	switch logical {
+	case "boolean":
+		switch strings.ToLower(s) {
+		case "true", "t", "1":
+			return int64(1)
+		case "false", "f", "0":
+			return int64(0)
+		}
+	case "integer":
+		if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+			return n
+		}
+	case "real":
+		if f, err := strconv.ParseFloat(s, 64); err == nil {
+			return f
+		}
+	}
+	return s
 }
 
 // coerce converts an incoming JSON value to the canonical storage form for a
