@@ -11,6 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dibakshya01/purple-sparrow/internal/agent/advisor"
+	agentdocs "github.com/dibakshya01/purple-sparrow/internal/agent/docs"
+	"github.com/dibakshya01/purple-sparrow/internal/agent/memory"
 	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
 	"github.com/dibakshya01/purple-sparrow/internal/auth"
 	"github.com/dibakshya01/purple-sparrow/internal/buildinfo"
@@ -89,6 +92,9 @@ func run() error {
 		Policy:  pol,
 		Meta:    mta,
 		Auth:    authSvc,
+		Docs:    agentdocs.New(),
+		Memory:  memory.New(eng),
+		Advisor: advisor.New(cat, pol),
 	})
 	httpServer := &http.Server{
 		Addr:    cfg.Addr,
