@@ -26,12 +26,14 @@ const (
 
 // Sentinel errors mapped to envelope codes by the HTTP layer.
 var (
-	ErrPolicyDenied   = errors.New("policy denied")
-	ErrRecordNotFound = errors.New("record not found")
-	ErrUnknownColumn  = errors.New("unknown column")
-	ErrReadOnlyColumn = errors.New("read-only column")
-	ErrInvalidFilter  = errors.New("invalid filter")
-	ErrNoValues       = errors.New("no values provided")
+	ErrPolicyDenied     = errors.New("policy denied")
+	ErrRecordNotFound   = errors.New("record not found")
+	ErrUnknownColumn    = errors.New("unknown column")
+	ErrReadOnlyColumn   = errors.New("read-only column")
+	ErrInvalidFilter    = errors.New("invalid filter")
+	ErrNoValues         = errors.New("no values provided")
+	ErrMissingRequired  = errors.New("missing required column")
+	ErrConstraint       = errors.New("constraint violation")
 )
 
 var readOnlyColumns = map[string]bool{"id": true, "created_at": true}
@@ -76,8 +78,9 @@ var filterOps = map[string]string{
 
 // tableContext bundles a table's column metadata.
 type tableContext struct {
-	names []string
-	types map[string]string
+	names    []string
+	types    map[string]string
+	required map[string]bool // non-nullable user columns that must be supplied on insert
 }
 
 func (s *Service) tableCtx(ctx context.Context, table string) (*tableContext, error) {
@@ -85,12 +88,22 @@ func (s *Service) tableCtx(ctx context.Context, table string) (*tableContext, er
 	if err != nil {
 		return nil, err // catalog.ErrTableNotFound flows through
 	}
-	tc := &tableContext{types: make(map[string]string, len(cols))}
+	tc := &tableContext{types: make(map[string]string, len(cols)), required: map[string]bool{}}
 	for _, c := range cols {
 		tc.names = append(tc.names, c.Name)
 		tc.types[c.Name] = c.Type
+		if !c.Nullable && !readOnlyColumns[c.Name] {
+			tc.required[c.Name] = true
+		}
 	}
 	return tc, nil
+}
+
+// isConstraintErr reports whether a DB error is a constraint violation (NOT NULL,
+// UNIQUE, CHECK, FK). String-based for SQLite today; Postgres (M5) will key off
+// SQLSTATE 23xxx. Used to turn a reachable client error into a 4xx, not a 500.
+func isConstraintErr(err error) bool {
+	return strings.Contains(strings.ToLower(err.Error()), "constraint")
 }
 
 func (tc *tableContext) has(col string) bool { return tc.types[col] != "" }
@@ -271,6 +284,13 @@ func (s *Service) InsertMany(ctx context.Context, p principal.Principal, table s
 			}
 			row[k] = coerce(v, tc.types[k])
 		}
+		// Validate required columns up front so a missing field is a clean 400,
+		// not a NOT NULL constraint error surfacing as a 500.
+		for col := range tc.required {
+			if v, present := row[col]; !present || v == nil {
+				return nil, fmt.Errorf("%w: %s", ErrMissingRequired, col)
+			}
+		}
 		ok, cErr := s.enf.Check(ctx, p, table, policy.ActionInsert, tc.names, row)
 		if cErr != nil {
 			return nil, cErr
@@ -298,6 +318,9 @@ func (s *Service) InsertMany(ctx context.Context, p principal.Principal, table s
 			ph := strings.TrimSuffix(strings.Repeat("?, ", len(pr.cols)), ", ")
 			sql := "INSERT INTO " + d.QuoteIdent(table) + " (" + strings.Join(quoted, ", ") + ") VALUES (" + ph + ")"
 			if _, e := q.ExecCtx(ctx, sql, pr.args...); e != nil {
+				if isConstraintErr(e) {
+					return fmt.Errorf("%w: %v", ErrConstraint, e)
+				}
 				return e
 			}
 		}
@@ -397,6 +420,9 @@ func (s *Service) Update(ctx context.Context, p principal.Principal, table, id s
 	sql := "UPDATE " + d.QuoteIdent(table) + " SET " + strings.Join(setCols, ", ") + " WHERE " + upWhere
 	n, err := s.eng.ExecCtx(ctx, sql, upArgs...)
 	if err != nil {
+		if isConstraintErr(err) {
+			return nil, fmt.Errorf("%w: %v", ErrConstraint, err)
+		}
 		return nil, err
 	}
 	if n == 0 {

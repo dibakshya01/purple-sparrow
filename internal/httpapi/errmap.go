@@ -50,10 +50,16 @@ func mapDomainError(err error) *apierr.Error {
 		return apierr.New(http.StatusBadRequest, "invalid_filter", err.Error(),
 			"Filters are ?column=op.value with op in eq,ne,lt,lte,gt,gte,like,in. Check the column exists via GET /meta.",
 			"/docs/errors#invalid_filter")
-	case errors.Is(err, records.ErrUnknownColumn), errors.Is(err, records.ErrReadOnlyColumn), errors.Is(err, records.ErrNoValues):
+	case errors.Is(err, records.ErrUnknownColumn), errors.Is(err, records.ErrReadOnlyColumn),
+		errors.Is(err, records.ErrNoValues), errors.Is(err, records.ErrMissingRequired):
 		return apierr.New(http.StatusBadRequest, "validation_failed", err.Error(),
-			"Only existing, user-writable columns may be set. id and created_at are managed by the system. GET /meta lists columns.",
+			"Only existing, user-writable columns may be set; required (non-nullable) columns must be provided. id and created_at are system-managed. GET /meta lists columns.",
 			"/docs/errors#validation_failed", "GET /meta")
+	case errors.Is(err, records.ErrConstraint):
+		return apierr.New(http.StatusConflict, "constraint_violation",
+			"The write violates a table constraint (e.g. a unique value already exists).",
+			"Check unique columns and required fields; GET /meta shows the table's columns and constraints.",
+			"/docs/errors#constraint_violation", "GET /meta")
 
 	case errors.Is(err, policy.ErrInvalidExpr):
 		return apierr.New(http.StatusBadRequest, "policy_invalid_expr", err.Error(),

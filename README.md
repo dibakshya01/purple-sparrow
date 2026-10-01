@@ -39,28 +39,60 @@ agent can operate the backend like a backend engineer.
 
 ## Status
 
-**Pre-alpha, under active construction.** This repository is being built milestone
-by milestone (spec-driven). What exists today:
+**Alpha, under active construction.** Built milestone by milestone (spec-driven).
+What works today:
 
 - **M0 — Foundations** ✅ single static binary, typed config, structured logging,
-  HTTP router with the agent-native error envelope, health/readiness, graceful
-  shutdown, CI.
+  agent-native error envelope, health/readiness, graceful shutdown, CI.
+- **M1 — Data + policy spine** ✅ user tables, records CRUD, an app-layer policy
+  engine (deny-by-default, USING + WITH CHECK, fuzz-tested, parameterized),
+  `/meta` introspection.
+- **M2 — Auth** ✅ email/password, RS256 access tokens + JWKS, single-use refresh
+  rotation, hashed API keys, real principal resolver.
+- **M3 — Agent layer** ✅ docs over the API (`/docs`), per-subject agent memory,
+  and an advisor (`/advisor`).
+- **M4 — MCP + CLI** ✅ operate the whole backend as MCP tools (`purplesparrow mcp`).
 
-Next: **M1** the data + policy engine (the spine), then auth, then the agent layer.
+Next (not yet built): **M5** a Postgres engine for scale, then storage, edge
+functions, realtime, the dashboard, and release hardening. Those adapters are
+designed (see the architecture) but not implemented — don't expect them yet.
 
-## Quickstart (M0)
+## Quickstart
 
 ```bash
 # build a single static binary
 CGO_ENABLED=0 go build -o purplesparrow ./cmd/purplesparrow
 
-# run it
-./purplesparrow
-# → listening on 127.0.0.1:8787
+# run it (solo tier: embedded SQLite, no external deps)
+PS_ADMIN_API_KEY=ps_sk_dev ./purplesparrow      # → 127.0.0.1:8787
 
-curl -s http://127.0.0.1:8787/healthz   # {"status":"ok"}
-curl -s http://127.0.0.1:8787/v1        # service metadata
+ADMIN="Authorization: Bearer ps_sk_dev"
+
+# create a table (id + created_at are added automatically)
+curl -s -H "$ADMIN" -X POST localhost:8787/v1/tables \
+  -d '{"name":"todos","columns":[{"name":"title","type":"text"},{"name":"owner_id","type":"text"}]}'
+
+# access is deny-by-default — grant a role, then use records
+curl -s -H "$ADMIN" -X POST localhost:8787/v1/policies \
+  -d '{"table":"todos","action":"select","roles":["anon"],"using":"true"}'
+curl -s -H "$ADMIN" -X POST localhost:8787/v1/tables/todos/records -d '{"title":"ship","owner_id":"u1"}'
+curl -s localhost:8787/v1/tables/todos/records
+
+# introspect, read docs, run the advisor
+curl -s -H "$ADMIN" localhost:8787/meta
+curl -s localhost:8787/docs
+curl -s -H "$ADMIN" localhost:8787/advisor
+
+# user auth
+curl -s -X POST localhost:8787/v1/auth/signup -d '{"email":"a@b.com","password":"password1"}'
 ```
+
+Connect a coding agent over MCP: `purplesparrow mcp-config` prints a client config
+snippet; `purplesparrow mcp` runs the MCP stdio server.
+
+> Note: `PS_ADMIN_API_KEY` is required for non-solo tiers (the server refuses to
+> boot without it rather than log an ephemeral secret). In solo tier it's
+> auto-generated and logged for convenience.
 
 Configuration is via `PS_`-prefixed environment variables:
 

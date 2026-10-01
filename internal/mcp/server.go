@@ -68,7 +68,8 @@ func (s *Server) Run(ctx context.Context, in io.Reader, out io.Writer) error {
 		}
 		var req rpcRequest
 		if err := json.Unmarshal(line, &req); err != nil {
-			_ = enc.Encode(rpcResponse{JSONRPC: "2.0", Error: &rpcError{Code: -32700, Message: "parse error"}})
+			// JSON-RPC: a parse error carries a null id.
+			_ = enc.Encode(rpcResponse{JSONRPC: "2.0", ID: json.RawMessage("null"), Error: &rpcError{Code: -32700, Message: "parse error"}})
 			continue
 		}
 		resp, isNotification := s.dispatch(ctx, &req)
