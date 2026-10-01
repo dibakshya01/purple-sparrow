@@ -32,8 +32,13 @@ func NewUUID() string {
 	return string(dst[:])
 }
 
-// NowRFC3339 returns the current UTC time as an RFC-3339 nanosecond string, the
-// canonical timestamp representation across engines.
+// tsLayout is RFC-3339 with FIXED 9-digit fractional seconds. Fixed width makes
+// lexicographic ordering of the TEXT-stored timestamps match chronological order
+// (RFC3339Nano trims trailing zeros, which can misorder sub-second values).
+const tsLayout = "2006-01-02T15:04:05.000000000Z07:00"
+
+// NowRFC3339 returns the current UTC time as a fixed-precision RFC-3339 string,
+// the canonical timestamp representation across engines.
 func NowRFC3339() string {
-	return time.Now().UTC().Format(time.RFC3339Nano)
+	return time.Now().UTC().Format(tsLayout)
 }

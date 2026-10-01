@@ -135,10 +135,22 @@ func run() error {
 		return err
 	}
 
-	// Data engine (SQLite, solo tier) + migrations.
-	eng, err := data.OpenSQLite(cfg.DatabasePath())
-	if err != nil {
-		return err
+	// Data engine: Postgres when PS_DATABASE_URL is set, else embedded SQLite.
+	var eng data.Engine
+	if cfg.DatabaseURL != "" {
+		pg, perr := data.OpenPostgres(cfg.DatabaseURL)
+		if perr != nil {
+			return perr
+		}
+		eng = pg
+		logger.Info("using postgres engine")
+	} else {
+		sq, serr := data.OpenSQLite(cfg.DatabasePath())
+		if serr != nil {
+			return serr
+		}
+		eng = sq
+		logger.Info("using embedded sqlite engine", "path", cfg.DatabasePath())
 	}
 	defer eng.Close()
 	if err := migrate.Run(context.Background(), eng); err != nil {

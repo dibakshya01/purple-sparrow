@@ -51,6 +51,9 @@ type Config struct {
 	// config means "not set"; main generates an ephemeral one at boot for the solo
 	// tier and logs it. M2 replaces this bridge with full auth.
 	AdminAPIKey string
+	// DatabaseURL (PS_DATABASE_URL) selects the Postgres engine when set; empty
+	// uses the embedded SQLite engine. Carries credentials — never logged.
+	DatabaseURL string
 }
 
 // DatabasePath returns the SQLite database file path within the data dir.
@@ -73,14 +76,17 @@ func Defaults() Config {
 	}
 }
 
-// EffectiveTier resolves TierAuto to a concrete tier. For now "auto" means the
-// single-binary solo profile; a later milestone may infer it from configured
-// dependencies (e.g. a Postgres DSN implies startup/enterprise).
+// EffectiveTier resolves TierAuto to a concrete tier. "auto" means the single-
+// binary solo profile unless a Postgres DSN is configured, which implies a
+// non-solo (startup) deployment — and therefore requires an explicit admin key.
 func (c Config) EffectiveTier() Tier {
-	if c.Tier == TierAuto {
-		return TierSolo
+	if c.Tier != TierAuto {
+		return c.Tier
 	}
-	return c.Tier
+	if c.DatabaseURL != "" {
+		return TierStartup
+	}
+	return TierSolo
 }
 
 // Load reads PS_-prefixed environment variables over the defaults and validates
@@ -105,6 +111,11 @@ func Load() (Config, error) {
 	}
 	if v := env("PS_ADMIN_API_KEY"); v != "" {
 		c.AdminAPIKey = v
+	}
+	if v := env("PS_DATABASE_URL"); v != "" {
+		c.DatabaseURL = v
+	} else if v := env("PS_POSTGRES_DSN"); v != "" {
+		c.DatabaseURL = v
 	}
 
 	return c, c.Validate()

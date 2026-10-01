@@ -40,4 +40,15 @@ type Dialect interface {
 	Placeholder(n int) string
 	// Name identifies the dialect ("sqlite", "postgres").
 	Name() string
+	// SQLType maps a whitelisted logical column type to this engine's column type.
+	// ok is false for a non-whitelisted logical type.
+	SQLType(logical string) (sqlType string, ok bool)
+	// LikeOperator returns the operator used for the `like` filter so matching is
+	// consistently case-insensitive across engines (SQLite LIKE is ASCII
+	// case-insensitive; Postgres uses ILIKE).
+	LikeOperator() string
+	// LockClause returns a row-locking suffix for a SELECT inside a transaction
+	// (Postgres: " FOR UPDATE"; SQLite: "" — its single-writer transaction already
+	// serializes, and it does not support FOR UPDATE syntax).
+	LockClause() string
 }

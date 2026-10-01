@@ -44,3 +44,33 @@ jobs:
 
       - name: build (static)
         run: CGO_ENABLED=0 go build ./...
+
+  postgres-conformance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: purplesparrow_test
+          # C collation so TEXT ordering matches SQLite's BINARY collation.
+          POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27"
+          check-latest: true
+      - name: Postgres conformance (same policy/records behavior on both engines)
+        env:
+          PS_TEST_POSTGRES_DSN: postgres://postgres:postgres@localhost:5432/purplesparrow_test?sslmode=disable
+          PS_REQUIRE_POSTGRES: "1" # hard-fail if the DSN is somehow unset (no silent skip)
+        run: go test ./internal/records/ -run TestPostgresConformance -v

@@ -50,6 +50,26 @@ func SQLiteType(logical string) (string, bool) {
 	return t, ok
 }
 
+// postgresTypes mirrors the SQLite logical model for cross-engine parity rather
+// than using Postgres-native types. boolean->INTEGER so the single policy compiler
+// (which binds booleans as 0/1) works identically; timestamp/uuid/json->TEXT so
+// app-generated string values round-trip the same on both engines.
+var postgresTypes = map[string]string{
+	"text":      "TEXT",
+	"integer":   "BIGINT",
+	"real":      "DOUBLE PRECISION",
+	"boolean":   "INTEGER",
+	"timestamp": "TEXT",
+	"uuid":      "TEXT",
+	"json":      "TEXT",
+}
+
+// PostgresType returns the Postgres column type for a logical type, or ok=false.
+func PostgresType(logical string) (string, bool) {
+	t, ok := postgresTypes[strings.ToLower(logical)]
+	return t, ok
+}
+
 // ValidType reports whether logical is a whitelisted column type.
 func ValidType(logical string) bool {
 	_, ok := sqliteTypes[strings.ToLower(logical)]

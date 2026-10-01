@@ -10,9 +10,12 @@ import (
 // testDialect implements data.Dialect without a real database.
 type testDialect struct{}
 
-func (testDialect) QuoteIdent(s string) string { return `"` + strings.ReplaceAll(s, `"`, `""`) + `"` }
-func (testDialect) Placeholder(int) string     { return "?" }
-func (testDialect) Name() string               { return "test" }
+func (testDialect) QuoteIdent(s string) string              { return `"` + strings.ReplaceAll(s, `"`, `""`) + `"` }
+func (testDialect) Placeholder(int) string                  { return "?" }
+func (testDialect) Name() string                            { return "test" }
+func (testDialect) LikeOperator() string            { return "LIKE" }
+func (testDialect) LockClause() string              { return "" }
+func (testDialect) SQLType(l string) (string, bool) { return "TEXT", true }
 
 var testAllowed = map[string]bool{"id": true, "owner_id": true, "body": true, "age": true, "active": true}
 

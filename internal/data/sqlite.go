@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dibakshya01/purple-sparrow/internal/data/ident"
+
 	_ "modernc.org/sqlite" // pure-Go SQLite driver (no CGO)
 )
 
@@ -20,6 +22,10 @@ type sqliteDialect struct{}
 
 func (sqliteDialect) Name() string             { return "sqlite" }
 func (sqliteDialect) Placeholder(_ int) string { return "?" }
+func (sqliteDialect) LikeOperator() string     { return "LIKE" } // ASCII case-insensitive in SQLite
+func (sqliteDialect) LockClause() string       { return "" }     // single-writer tx serializes; no FOR UPDATE
+
+func (sqliteDialect) SQLType(logical string) (string, bool) { return ident.SQLiteType(logical) }
 
 // QuoteIdent double-quotes an identifier and escapes embedded quotes. Callers
 // must still validate identifiers against a whitelist first.
@@ -169,13 +175,41 @@ func scanRows(rows *sql.Rows) ([]Row, error) {
 		}
 		row := make(Row, len(cols))
 		for i, c := range cols {
-			if b, ok := cells[i].([]byte); ok {
-				row[c] = string(b)
-			} else {
-				row[c] = cells[i]
-			}
+			row[c] = canonical(cells[i])
 		}
 		out = append(out, row)
 	}
 	return out, rows.Err()
 }
+
+// canonical normalizes driver-specific scan types to a small canonical set so both
+// engines return identical Go types: all signed/unsigned integers -> int64,
+// float32 -> float64, []byte -> string. (pgx may return int32 for INTEGER where
+// modernc returns int64; without this a boolean-as-INTEGER would misread.)
+func canonical(v any) any {
+	switch x := v.(type) {
+	case []byte:
+		return string(x)
+	case int64:
+		return x
+	case int32:
+		return int64(x)
+	case int16:
+		return int64(x)
+	case int8:
+		return int64(x)
+	case int:
+		return int64(x)
+	case uint64:
+		return int64(x)
+	case uint32:
+		return int64(x)
+	case float32:
+		return float64(x)
+	default:
+		return v
+	}
+}
+
+// compile-time assertion that SQLite satisfies the Engine port.
+var _ Engine = (*SQLite)(nil)

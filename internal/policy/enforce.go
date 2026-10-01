@@ -16,8 +16,8 @@ type Enforcer struct{ eng data.Engine }
 // NewEnforcer returns an Enforcer.
 func NewEnforcer(eng data.Engine) *Enforcer { return &Enforcer{eng: eng} }
 
-func (e *Enforcer) matching(ctx context.Context, table string, action Action, p principal.Principal) ([]Policy, error) {
-	rows, err := e.eng.QueryCtx(ctx,
+func (e *Enforcer) matching(ctx context.Context, q data.Querier, table string, action Action, p principal.Principal) ([]Policy, error) {
+	rows, err := q.QueryCtx(ctx,
 		`SELECT id, table_name, action, roles, using_expr, check_expr
 		 FROM _ps_policies WHERE table_name = ? AND action = ?`, table, string(action))
 	if err != nil {
@@ -37,11 +37,11 @@ func (e *Enforcer) matching(ctx context.Context, table string, action Action, p 
 // allowed is false the caller must deny. For admin, allowed is true and frag is
 // empty (no restriction). The returned predicate must be AND-combined with any
 // user filters (never OR) so user filters can never widen access.
-func (e *Enforcer) Filter(ctx context.Context, p principal.Principal, table string, action Action, allowedCols []string) (frag string, args []any, allowed bool, err error) {
+func (e *Enforcer) Filter(ctx context.Context, q data.Querier, p principal.Principal, table string, action Action, allowedCols []string) (frag string, args []any, allowed bool, err error) {
 	if p.IsAdmin() {
 		return "", nil, true, nil
 	}
-	pols, err := e.matching(ctx, table, action, p)
+	pols, err := e.matching(ctx, q, table, action, p)
 	if err != nil {
 		return "", nil, false, err
 	}
@@ -69,11 +69,11 @@ func (e *Enforcer) Filter(ctx context.Context, p principal.Principal, table stri
 
 // Check evaluates the insert/update WITH CHECK predicates against a candidate row
 // (the post-write values). Returns whether the write is permitted. Admin bypasses.
-func (e *Enforcer) Check(ctx context.Context, p principal.Principal, table string, action Action, allowedCols []string, row map[string]any) (bool, error) {
+func (e *Enforcer) Check(ctx context.Context, q data.Querier, p principal.Principal, table string, action Action, allowedCols []string, row map[string]any) (bool, error) {
 	if p.IsAdmin() {
 		return true, nil
 	}
-	pols, err := e.matching(ctx, table, action, p)
+	pols, err := e.matching(ctx, q, table, action, p)
 	if err != nil {
 		return false, err
 	}
@@ -103,7 +103,7 @@ func (e *Enforcer) Check(ctx context.Context, p principal.Principal, table strin
 	}
 	// NULL result -> ELSE -> 0 (deny). Truthy only when a check passes.
 	sql := "SELECT CASE WHEN (" + strings.Join(frags, " OR ") + ") THEN 1 ELSE 0 END AS ok"
-	res, err := e.eng.QueryRowCtx(ctx, sql, args...)
+	res, err := q.QueryRowCtx(ctx, sql, args...)
 	if err != nil {
 		return false, err
 	}

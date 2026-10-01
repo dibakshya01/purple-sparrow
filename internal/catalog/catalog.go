@@ -233,7 +233,7 @@ func buildCreateDDL(d data.Dialect, table string, cols []Column) (string, error)
 	b.WriteString(d.QuoteIdent(table))
 	b.WriteString(" (\n")
 	for i, c := range cols {
-		sqlType, ok := ident.SQLiteType(c.Type)
+		sqlType, ok := d.SQLType(c.Type)
 		if !ok {
 			return "", fmt.Errorf("%w: %s", ErrInvalidType, c.Type)
 		}

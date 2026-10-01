@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/data"
 	"github.com/dibakshya01/purple-sparrow/internal/idgen"
@@ -100,9 +102,13 @@ func (s *Service) tableCtx(ctx context.Context, table string) (*tableContext, er
 }
 
 // isConstraintErr reports whether a DB error is a constraint violation (NOT NULL,
-// UNIQUE, CHECK, FK). String-based for SQLite today; Postgres (M5) will key off
-// SQLSTATE 23xxx. Used to turn a reachable client error into a 4xx, not a 500.
+// UNIQUE, CHECK, FK) so a reachable client error becomes a 4xx, not a 500. Postgres
+// is detected by SQLSTATE class 23 (locale-independent); SQLite by message.
 func isConstraintErr(err error) bool {
+	var pg *pgconn.PgError
+	if errors.As(err, &pg) {
+		return strings.HasPrefix(pg.Code, "23")
+	}
 	return strings.Contains(strings.ToLower(err.Error()), "constraint")
 }
 
@@ -114,7 +120,7 @@ func (s *Service) Query(ctx context.Context, p principal.Principal, table string
 	if err != nil {
 		return nil, err
 	}
-	frag, pArgs, allowed, err := s.enf.Filter(ctx, p, table, policy.ActionSelect, tc.names)
+	frag, pArgs, allowed, err := s.enf.Filter(ctx, s.eng, p, table, policy.ActionSelect, tc.names)
 	if err != nil {
 		return nil, err
 	}
@@ -164,6 +170,11 @@ func (s *Service) Query(ctx context.Context, p principal.Principal, table string
 		if !ok {
 			return nil, fmt.Errorf("%w: unknown operator %q", ErrInvalidFilter, f.Op)
 		}
+		if f.Op == "like" {
+			// Dialect-aware so `like` is consistently case-insensitive across engines
+			// (SQLite LIKE is ASCII case-insensitive; Postgres uses ILIKE).
+			sqlOp = d.LikeOperator()
+		}
 		where = append(where, d.QuoteIdent(f.Column)+" "+sqlOp+" ?")
 		args = append(args, coerceFilterValue(f.Value, tc.types[f.Column]))
 	}
@@ -180,7 +191,9 @@ func (s *Service) Query(ctx context.Context, p principal.Principal, table string
 		if o.Desc {
 			dir = "DESC"
 		}
-		orderParts = append(orderParts, d.QuoteIdent(o.Column)+" "+dir)
+		// Explicit NULLS LAST so ordering (and thus LIMIT/OFFSET pagination) is
+		// identical across engines: SQLite defaults NULLs first on ASC, Postgres last.
+		orderParts = append(orderParts, d.QuoteIdent(o.Column)+" "+dir+" NULLS LAST")
 		if o.Column == "id" {
 			hasID = true
 		}
@@ -291,7 +304,7 @@ func (s *Service) InsertMany(ctx context.Context, p principal.Principal, table s
 				return nil, fmt.Errorf("%w: %s", ErrMissingRequired, col)
 			}
 		}
-		ok, cErr := s.enf.Check(ctx, p, table, policy.ActionInsert, tc.names, row)
+		ok, cErr := s.enf.Check(ctx, s.eng, p, table, policy.ActionInsert, tc.names, row)
 		if cErr != nil {
 			return nil, cErr
 		}
@@ -351,7 +364,7 @@ func (s *Service) Update(ctx context.Context, p principal.Principal, table, id s
 	}
 	d := s.eng.Dialect()
 
-	usingFrag, usingArgs, allowed, err := s.enf.Filter(ctx, p, table, policy.ActionUpdate, tc.names)
+	usingFrag, usingArgs, allowed, err := s.enf.Filter(ctx, s.eng, p, table, policy.ActionUpdate, tc.names)
 	if err != nil {
 		return nil, err
 	}
@@ -378,59 +391,68 @@ func (s *Service) Update(ctx context.Context, p principal.Principal, table, id s
 		setArgs = append(setArgs, cv)
 	}
 
-	// Fetch the existing row within the policy's USING scope.
-	selArgs := []any{id}
-	selWhere := d.QuoteIdent("id") + " = ?"
-	if usingFrag != "" {
-		selWhere += " AND " + usingFrag
-		selArgs = append(selArgs, usingArgs...)
-	}
-	existing, err := s.eng.QueryRowCtx(ctx, "SELECT * FROM "+d.QuoteIdent(table)+" WHERE "+selWhere, selArgs...)
-	if errors.Is(err, data.ErrNoRows) {
-		return nil, ErrRecordNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// Merge the coerced patch onto the existing row for the CHECK.
-	merged := make(map[string]any, len(existing))
-	for k, v := range existing {
-		merged[k] = v
-	}
-	for k, v := range coerced {
-		merged[k] = v
-	}
-
-	ok, err := s.enf.Check(ctx, p, table, policy.ActionUpdate, tc.names, merged)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, ErrPolicyDenied
-	}
-
-	// UPDATE constrained again by id + USING so a concurrent change can't slip out.
-	upWhere := d.QuoteIdent("id") + " = ?"
-	upArgs := append(append([]any{}, setArgs...), id)
-	if usingFrag != "" {
-		upWhere += " AND " + usingFrag
-		upArgs = append(upArgs, usingArgs...)
-	}
-	sql := "UPDATE " + d.QuoteIdent(table) + " SET " + strings.Join(setCols, ", ") + " WHERE " + upWhere
-	n, err := s.eng.ExecCtx(ctx, sql, upArgs...)
-	if err != nil {
-		if isConstraintErr(err) {
-			return nil, fmt.Errorf("%w: %v", ErrConstraint, err)
+	// Read-modify-write runs in ONE transaction with a row lock (Postgres FOR
+	// UPDATE; SQLite's single-writer tx serializes) so the policy CHECK is evaluated
+	// against state that cannot change before the UPDATE lands — closing the TOCTOU
+	// where a concurrent writer alters a CHECK-referenced column between read and write.
+	var result data.Row
+	err = s.eng.Transact(ctx, func(q data.Querier) error {
+		selArgs := []any{id}
+		selWhere := d.QuoteIdent("id") + " = ?"
+		if usingFrag != "" {
+			selWhere += " AND " + usingFrag
+			selArgs = append(selArgs, usingArgs...)
 		}
+		existing, rerr := q.QueryRowCtx(ctx, "SELECT * FROM "+d.QuoteIdent(table)+" WHERE "+selWhere+d.LockClause(), selArgs...)
+		if errors.Is(rerr, data.ErrNoRows) {
+			return ErrRecordNotFound
+		}
+		if rerr != nil {
+			return rerr
+		}
+
+		merged := make(map[string]any, len(existing))
+		for k, v := range existing {
+			merged[k] = v
+		}
+		for k, v := range coerced {
+			merged[k] = v
+		}
+
+		ok, cerr := s.enf.Check(ctx, q, p, table, policy.ActionUpdate, tc.names, merged)
+		if cerr != nil {
+			return cerr
+		}
+		if !ok {
+			return ErrPolicyDenied
+		}
+
+		upWhere := d.QuoteIdent("id") + " = ?"
+		upArgs := append(append([]any{}, setArgs...), id)
+		if usingFrag != "" {
+			upWhere += " AND " + usingFrag
+			upArgs = append(upArgs, usingArgs...)
+		}
+		sql := "UPDATE " + d.QuoteIdent(table) + " SET " + strings.Join(setCols, ", ") + " WHERE " + upWhere
+		n, uerr := q.ExecCtx(ctx, sql, upArgs...)
+		if uerr != nil {
+			if isConstraintErr(uerr) {
+				return fmt.Errorf("%w: %v", ErrConstraint, uerr)
+			}
+			return uerr
+		}
+		if n == 0 {
+			return ErrRecordNotFound
+		}
+		result = merged
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
-	if n == 0 {
-		return nil, ErrRecordNotFound
-	}
 
-	normalizeRow(merged, tc.types)
-	return merged, nil
+	normalizeRow(result, tc.types)
+	return result, nil
 }
 
 // Delete removes a row by id within the policy USING scope.
@@ -440,7 +462,7 @@ func (s *Service) Delete(ctx context.Context, p principal.Principal, table, id s
 		return err
 	}
 	d := s.eng.Dialect()
-	frag, pArgs, allowed, err := s.enf.Filter(ctx, p, table, policy.ActionDelete, tc.names)
+	frag, pArgs, allowed, err := s.enf.Filter(ctx, s.eng, p, table, policy.ActionDelete, tc.names)
 	if err != nil {
 		return err
 	}
