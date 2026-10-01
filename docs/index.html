@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Purple Sparrow — the agent-native backend</title>
+  <meta name="description" content="An open-source backend-as-a-service built for AI coding agents. Deny-by-default policy engine, self-correcting errors, one-call introspection, and native MCP — in a single Go binary." />
+  <meta property="og:title" content="Purple Sparrow — the agent-native backend" />
+  <meta property="og:description" content="The backend your coding agent can actually operate. Single binary. Deny-by-default. MCP-native." />
+  <meta property="og:image" content="assets/social-card.jpg" />
+  <meta name="theme-color" content="#0b0a12" />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="wrap nav__inner">
+      <a class="brand" href="index.html" aria-label="Purple Sparrow home">
+        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
+        <span style="color:var(--accent)">Purple</span>&nbsp;Sparrow
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false">≡</button>
+      <div class="nav__links">
+        <a href="index.html" class="active">Home</a>
+        <a href="eli5.html">In plain English</a>
+        <a href="docs.html">Docs</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="contact.html">Community</a>
+        <a href="https://github.com/dibakshya01/purple-sparrow" class="nav__gh">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero__grid"></div>
+    <div class="hero__glow"></div>
+    <div class="wrap hero__inner">
+      <span class="kicker">● Agent-native backend</span>
+      <h1>The backend your coding agent can actually operate.</h1>
+      <p class="hero__lede">Database, auth, storage-grade policies, and tools — in one Go binary. Deny-by-default security, errors that tell an agent how to fix themselves, and native MCP. Open source, runs anywhere.</p>
+      <div class="cmd">
+        <span class="prompt">$</span>
+        <code>go build ./cmd/purplesparrow &amp;&amp; ./purplesparrow</code>
+        <button class="copy" data-copy="go build ./cmd/purplesparrow && ./purplesparrow">copy</button>
+      </div>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="docs.html">Get started →</a>
+        <a class="btn btn--ghost" href="https://github.com/dibakshya01/purple-sparrow">Star on GitHub</a>
+      </div>
+      <div class="badges">
+        <span class="badge"><b>Apache-2.0</b></span>
+        <span class="badge">Go · <b>single binary</b></span>
+        <span class="badge">SQLite-first · <b>Postgres</b> for scale</span>
+        <span class="badge"><b>MCP</b>-native</span>
+        <span class="badge">deny-by-default</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="wrap">
+        <p class="section-kicker reveal">Why it exists</p>
+        <h2 class="reveal">Generic backends were built for humans clicking dashboards.</h2>
+        <p class="lead reveal">Coding agents operate backends through APIs — and they fail silently, leak data through missing rules, and can't discover what a backend can do. Purple Sparrow is designed so an agent can drive it correctly and recover on its own.</p>
+        <div class="grid" style="margin-top:2rem">
+          <div class="card reveal">
+            <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>Secure by default</h3>
+            <p>Access is deny-by-default. An app-layer policy engine compiles rules into parameterized SQL — with USING <em>and</em> WITH CHECK, so an agent can't accidentally expose or reassign data. Fuzz-tested.</p>
+          </div>
+          <div class="card reveal">
+            <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg>Self-correcting</h3>
+            <p>Every error carries machine-readable <code>remediation</code> and <code>next_actions</code>. When an agent hits a wall, the response tells it exactly how to get past it.</p>
+          </div>
+          <div class="card reveal">
+            <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg>Discoverable</h3>
+            <p>One call to <code>/meta</code> returns the whole backend's shape. Docs are served over the API. An advisor lints the configuration. The agent never has to guess.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="background:var(--bg-subtle); border-block:1px solid var(--border)">
+      <div class="wrap">
+        <p class="section-kicker reveal">How it works</p>
+        <h2 class="reveal">From one command to a governed backend.</h2>
+        <div class="split" style="margin-top:2rem">
+          <div class="steps">
+            <div class="step reveal"><div class="step__n"></div><div><h3>Run the binary</h3><p>One static binary, embedded SQLite — no dependencies. Point <code>PS_DATABASE_URL</code> at Postgres when you scale.</p></div></div>
+            <div class="step reveal"><div class="step__n"></div><div><h3>Define tables &amp; policies</h3><p><code>POST /v1/tables</code>, then grant access with a policy. Nothing is readable until a rule says so.</p></div></div>
+            <div class="step reveal"><div class="step__n"></div><div><h3>Connect your agent</h3><p><code>purplesparrow mcp</code> exposes the whole backend as MCP tools for Cursor, Claude, and friends.</p></div></div>
+            <div class="step reveal"><div class="step__n"></div><div><h3>Let it build</h3><p>The agent introspects, acts, and self-corrects from error remediation — like a backend engineer.</p></div></div>
+          </div>
+          <div class="reveal">
+<pre class="code"><span class="c"># create a table (id + created_at are automatic)</span>
+POST /v1/tables
+{ "name": "todos", "columns": [
+  { "name": "title",    "type": "text" },
+  { "name": "owner_id", "type": "text" } ] }
+
+<span class="c"># deny-by-default — grant owner-scoped reads</span>
+POST /v1/policies
+{ "table": "todos", "action": "select",
+  "roles": ["authenticated"],
+  "using": <span class="s">"auth.uid() = owner_id"</span> }
+
+<span class="c"># one call returns the whole backend shape</span>
+GET /meta  <span class="c">→ tables · columns · policies</span></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <p class="section-kicker reveal">What's inside</p>
+        <div class="grid reveal">
+          <div class="card"><h3>Data + policy</h3><p>User tables, records CRUD, PostgREST-style filters — every read row-filtered, every write checked.</p></div>
+          <div class="card"><h3>Auth</h3><p>Email/password, RS256 JWTs published via JWKS, single-use refresh rotation, hashed API keys.</p></div>
+          <div class="card"><h3>Agent layer</h3><p>Docs-over-API, per-agent memory, and an advisor that flags risky configuration.</p></div>
+          <div class="card"><h3>MCP + CLI</h3><p>The whole surface as agent tools, plus <code>serve</code> / <code>mcp</code> / <code>mcp-config</code>.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="cta-band reveal">
+          <div class="hero__glow"></div>
+          <div style="position:relative">
+            <h2>Give your agent a backend it understands.</h2>
+            <p style="color:var(--ink-muted); max-width:52ch; margin:0 auto 1.6rem">Open source, Apache-2.0. Clone it, run it, and point your agent at it in minutes.</p>
+            <div class="hero__cta">
+              <a class="btn btn--primary" href="docs.html">Read the docs →</a>
+              <a class="btn btn--ghost" href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__row">
+      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
+      <nav class="footer__links">
+        <a href="eli5.html">In plain English</a>
+        <a href="docs.html">Docs</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="contact.html">Community</a>
+        <a href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+      </nav>
+    </div>
+    <div class="wrap" style="margin-top:1rem; font-size:.82rem; opacity:.7">Apache-2.0 · Built in the open. Not affiliated with any other backend platform.</div>
+  </footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>

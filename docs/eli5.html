@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Purple Sparrow — in plain English</title>
+  <meta name="description" content="What Purple Sparrow is, why it exists, and its honest limits — for non-technical readers and decision-makers." />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body class="on-light">
+  <nav class="nav">
+    <div class="wrap nav__inner">
+      <a class="brand" href="index.html" aria-label="Purple Sparrow home">
+        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
+        <span style="color:var(--accent)">Purple</span>&nbsp;Sparrow
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false">≡</button>
+      <div class="nav__links">
+        <a href="index.html">Home</a>
+        <a href="eli5.html" class="active">In plain English</a>
+        <a href="docs.html">Docs</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="contact.html">Community</a>
+        <a href="https://github.com/dibakshya01/purple-sparrow" class="nav__gh">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wrap narrow" style="padding-top:3.5rem; padding-bottom:2rem">
+    <p class="section-kicker">In plain English</p>
+    <h1 style="font-size:clamp(2rem,5vw,3rem)">For people who don't write code.</h1>
+    <p class="lead">Software products need a "back office" — a place to store data (users, orders, messages), check who's allowed to see what, and run logic. That back office is called a <em>backend</em>. Purple Sparrow is a backend built for a new kind of worker: the <strong>AI coding assistant</strong>.</p>
+
+    <h2 style="margin-top:2.5rem">The analogy</h2>
+    <p>Imagine hiring a brilliant, fast new employee who can build whole features by themselves — but they're brand new and can only communicate by filling out forms. A normal back office assumes a <em>human</em> is clicking around, so this employee keeps making mistakes no one catches, and can't easily ask "what's in here?"</p>
+    <p>Purple Sparrow is a back office designed for <em>that</em> employee. When they make a mistake, the form it hands back says exactly how to fix it. There's a single page that lists everything the office contains. And by default, every drawer is <strong>locked</strong> until someone writes a rule that opens it — so sensitive data isn't left exposed by accident.</p>
+
+    <div class="grid" style="margin-top:2rem">
+      <div class="card"><h3>What it is</h3><p>An open-source backend (database + security rules + tools) that an AI coding assistant can operate correctly and safely.</p></div>
+      <div class="card"><h3>Why it matters</h3><p>Teams are shipping with AI assistants. This reduces the two big risks: data left exposed, and the assistant getting stuck.</p></div>
+      <div class="card"><h3>How it's run</h3><p>A single program. A developer starts it with one command on a laptop; it scales to the cloud without a rewrite.</p></div>
+    </div>
+
+    <h2 style="margin-top:2.5rem">Honest about limits</h2>
+    <div class="callout">
+      <p style="margin:0 0 .5rem"><strong>This is an early (alpha) project.</strong> It's real, tested, and safe to try — but not yet battle-tested in production, and some planned pieces aren't built yet.</p>
+      <ul class="eyebrow-list" style="margin:.5rem 0 0">
+        <li>Built today: database, security policies, logins, the agent tools, and the single-binary + Postgres options.</li>
+        <li>Not yet built: file storage, serverless functions, live updates, and the visual admin screen.</li>
+        <li>Before storing real customer data, it should get an independent security review.</li>
+      </ul>
+    </div>
+
+    <h2 style="margin-top:2.5rem">Talking points for leaders</h2>
+    <ul class="eyebrow-list">
+      <li><strong>Security posture:</strong> "deny-by-default" means nothing is readable until a rule explicitly allows it — the safe default.</li>
+      <li><strong>No lock-in:</strong> open source (Apache-2.0), standard technologies, runs on your own infrastructure.</li>
+      <li><strong>Cost/ops:</strong> one small program; a beginner can run it for free locally, and it grows to a normal database for scale.</li>
+      <li><strong>Future-fit:</strong> designed around the way AI coding tools actually work, not retrofitted onto a human dashboard.</li>
+    </ul>
+
+    <div style="margin-top:2.5rem">
+      <a class="btn btn--primary" href="docs.html">See how a developer uses it →</a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__row">
+      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
+      <nav class="footer__links">
+        <a href="eli5.html">In plain English</a><a href="docs.html">Docs</a><a href="architecture.html">Architecture</a><a href="contact.html">Community</a><a href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>

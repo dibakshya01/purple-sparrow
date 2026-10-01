@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Purple Sparrow — docs</title>
+  <meta name="description" content="Quick start, the API surface, the CLI, and MCP setup for Purple Sparrow." />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body class="on-light">
+  <nav class="nav">
+    <div class="wrap nav__inner">
+      <a class="brand" href="index.html" aria-label="Purple Sparrow home">
+        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
+        <span style="color:var(--accent)">Purple</span>&nbsp;Sparrow
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false">≡</button>
+      <div class="nav__links">
+        <a href="index.html">Home</a>
+        <a href="eli5.html">In plain English</a>
+        <a href="docs.html" class="active">Docs</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="contact.html">Community</a>
+        <a href="https://github.com/dibakshya01/purple-sparrow" class="nav__gh">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wrap narrow" style="padding-top:3.5rem; padding-bottom:2rem">
+    <p class="section-kicker">Docs</p>
+    <h1 style="font-size:clamp(2rem,5vw,3rem)">Quick start</h1>
+    <p class="lead">Go 1.27+. Everything below runs against the single binary with embedded SQLite — no external services.</p>
+
+    <h3 style="margin-top:2rem">1 · Build &amp; run</h3>
+<pre class="code"><span class="c"># one static binary, embedded SQLite</span>
+CGO_ENABLED=0 go build -o purplesparrow ./cmd/purplesparrow
+PS_ADMIN_API_KEY=ps_sk_dev ./purplesparrow   <span class="c"># → 127.0.0.1:8787</span></pre>
+
+    <h3 style="margin-top:2rem">2 · Create a table</h3>
+    <p><code>id</code> (uuid) and <code>created_at</code> are added automatically. Types: <code>text, integer, real, boolean, timestamp, uuid, json</code>.</p>
+<pre class="code">curl -H <span class="s">"Authorization: Bearer ps_sk_dev"</span> localhost:8787/v1/tables -d '{
+  "name": "todos",
+  "columns": [{"name":"title","type":"text"},
+              {"name":"owner_id","type":"text"}] }'</pre>
+
+    <h3 style="margin-top:2rem">3 · Grant access (deny-by-default)</h3>
+    <p>Nothing is readable until a policy says so. Policies compile to parameterized SQL and support <code>using</code> (which rows) and <code>check</code> (allowed new values).</p>
+<pre class="code">curl -H <span class="s">"Authorization: Bearer ps_sk_dev"</span> localhost:8787/v1/policies -d '{
+  "table": "todos", "action": "select",
+  "roles": ["authenticated"],
+  "using": "auth.uid() = owner_id" }'</pre>
+
+    <h3 style="margin-top:2rem">4 · Records</h3>
+<pre class="code">POST   /v1/tables/todos/records            <span class="c"># insert (object or array)</span>
+GET    /v1/tables/todos/records?done=eq.false&amp;order=created_at.desc&amp;limit=20
+GET    /v1/tables/todos/records/{id}
+PATCH  /v1/tables/todos/records/{id}
+DELETE /v1/tables/todos/records/{id}</pre>
+    <p>Filters are <code>?column=op.value</code> with <code>op</code> in <code>eq, ne, lt, lte, gt, gte, like, in</code>.</p>
+
+    <h2 style="margin-top:2.5rem">API surface</h2>
+    <table class="api">
+      <tr><th>Area</th><th>Endpoints</th></tr>
+      <tr><td>Tables</td><td><code>POST /v1/tables</code> · <code>GET /v1/tables</code> · <code>GET/DELETE /v1/tables/{t}</code></td></tr>
+      <tr><td>Records</td><td><code>POST/GET /v1/tables/{t}/records</code> · <code>GET/PATCH/DELETE …/{id}</code></td></tr>
+      <tr><td>Policies</td><td><code>POST /v1/policies</code> · <code>GET /v1/tables/{t}/policies</code></td></tr>
+      <tr><td>Auth</td><td><code>/v1/auth/signup · login · refresh · me · api-keys</code> · <code>/.well-known/jwks.json</code></td></tr>
+      <tr><td>Agent</td><td><code>GET /meta</code> · <code>GET /docs</code> · <code>GET /advisor</code> · <code>/v1/memory/{ns}/{key}</code></td></tr>
+      <tr><td>Ops</td><td><code>GET /healthz</code> · <code>GET /readyz</code> · <code>GET /v1</code></td></tr>
+    </table>
+
+    <h2 style="margin-top:2.5rem">CLI</h2>
+<pre class="code">purplesparrow            <span class="c"># serve (default)</span>
+purplesparrow mcp        <span class="c"># MCP stdio server for coding agents</span>
+purplesparrow mcp-config <span class="c"># print an MCP client config snippet</span>
+purplesparrow version</pre>
+
+    <h2 style="margin-top:2.5rem">Connect an agent (MCP)</h2>
+    <p>Run <code>purplesparrow mcp-config</code> and drop the snippet into your agent's MCP config (Cursor, Claude, …). It launches <code>purplesparrow mcp</code>, which exposes the backend as tools: <code>fetch_docs, get_meta, list_tables, create_table, query_records, insert_record, create_policy, run_advisor</code>.</p>
+
+    <h2 style="margin-top:2.5rem">Configuration</h2>
+    <table class="api">
+      <tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
+      <tr><td><code>PS_ADDR</code></td><td><code>127.0.0.1:8787</code></td><td>listen address (use <code>0.0.0.0:8787</code> in containers)</td></tr>
+      <tr><td><code>PS_ADMIN_API_KEY</code></td><td><em>(solo: generated)</em></td><td>admin key; <strong>required</strong> for non-solo tiers</td></tr>
+      <tr><td><code>PS_DATABASE_URL</code></td><td><em>(unset → SQLite)</em></td><td>Postgres DSN for the scale tier</td></tr>
+      <tr><td><code>PS_DATA_DIR</code></td><td><code>./.purplesparrow</code></td><td>data directory (DB file is <code>0600</code>)</td></tr>
+    </table>
+
+    <div class="callout" style="margin-top:2rem">Errors are an agent affordance: every non-2xx carries <code>code</code>, <code>message</code>, <code>remediation</code>, <code>next_actions</code>, and a <code>doc_ref</code>. Read them — they tell you (or your agent) how to recover.</div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__row">
+      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
+      <nav class="footer__links">
+        <a href="eli5.html">In plain English</a><a href="docs.html">Docs</a><a href="architecture.html">Architecture</a><a href="contact.html">Community</a><a href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>

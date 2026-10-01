@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Purple Sparrow — architecture</title>
+  <meta name="description" content="How Purple Sparrow is built: ports-and-adapters, an app-layer policy engine as the authorization boundary, and one codebase across SQLite and Postgres." />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <style>
+    .diagram { width:100%; height:auto; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; box-shadow:var(--shadow); }
+    .diagram .box { fill:var(--surface-2); stroke:var(--border); }
+    .diagram .box-accent { fill:var(--accent-soft); stroke:var(--accent); }
+    .diagram .box-dash { fill:none; stroke:var(--border); stroke-dasharray:5 4; }
+    .diagram text { fill:var(--text); font-family:var(--font-body); font-size:13px; }
+    .diagram .t-mono { font-family:var(--font-mono); font-size:11px; fill:var(--text-muted); }
+    .diagram .t-accent { fill:var(--accent); font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; }
+    .diagram .t-muted { fill:var(--text-muted); }
+    .diagram .flow { stroke:var(--accent); stroke-width:1.6; fill:none; marker-end:url(#arrow); }
+    .diagram .flow-mut { stroke:var(--text-muted); stroke-width:1.3; fill:none; marker-end:url(#arrowm); opacity:.8; }
+  </style>
+</head>
+<body class="on-light">
+  <nav class="nav">
+    <div class="wrap nav__inner">
+      <a class="brand" href="index.html" aria-label="Purple Sparrow home">
+        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
+        <span style="color:var(--accent)">Purple</span>&nbsp;Sparrow
+      </a>
+      <button class="menu-btn" aria-label="Menu" aria-expanded="false">≡</button>
+      <div class="nav__links">
+        <a href="index.html">Home</a>
+        <a href="eli5.html">In plain English</a>
+        <a href="docs.html">Docs</a>
+        <a href="architecture.html" class="active">Architecture</a>
+        <a href="contact.html">Community</a>
+        <a href="https://github.com/dibakshya01/purple-sparrow" class="nav__gh">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wrap" style="padding-top:3.5rem; padding-bottom:2rem; max-width:920px">
+    <p class="section-kicker">Architecture</p>
+    <h1 style="font-size:clamp(2rem,5vw,3rem)">One codebase. Two engines. One security boundary.</h1>
+    <p class="lead">Ports-and-adapters throughout, so the same policy engine, catalog, auth, and agent layers run on embedded SQLite or Postgres — selected by config, not a rewrite.</p>
+
+    <h2 style="margin-top:2.5rem">Components</h2>
+    <svg class="diagram" viewBox="0 0 800 470" role="img" aria-label="Component diagram">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--accent)"/></marker>
+        <marker id="arrowm" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--text-muted)"/></marker>
+      </defs>
+
+      <!-- clients -->
+      <text x="400" y="24" text-anchor="middle" class="t-accent">CLIENTS</text>
+      <rect class="box-accent" x="250" y="34" width="100" height="40" rx="8"/><text x="300" y="59" text-anchor="middle">MCP server</text>
+      <rect class="box-accent" x="360" y="34" width="80" height="40" rx="8"/><text x="400" y="59" text-anchor="middle">CLI</text>
+      <rect class="box-accent" x="450" y="34" width="100" height="40" rx="8"/><text x="500" y="59" text-anchor="middle">REST / agent</text>
+
+      <!-- gateway -->
+      <path class="flow" d="M400 74 L400 96"/>
+      <rect class="box" x="150" y="98" width="500" height="44" rx="8"/>
+      <text x="400" y="118" text-anchor="middle">HTTP gateway</text>
+      <text x="400" y="133" text-anchor="middle" class="t-mono">request-id · authn · recovery · access-log · security-headers</text>
+
+      <!-- subsystems -->
+      <path class="flow" d="M400 142 L400 162"/>
+      <text x="400" y="178" text-anchor="middle" class="t-accent">SUBSYSTEMS</text>
+      <rect class="box" x="60" y="188" width="150" height="46" rx="8"/><text x="135" y="208" text-anchor="middle">Data + Records</text><text x="135" y="224" text-anchor="middle" class="t-mono">tables · CRUD · /meta</text>
+      <rect class="box" x="220" y="188" width="140" height="46" rx="8"/><text x="290" y="208" text-anchor="middle">Auth</text><text x="290" y="224" text-anchor="middle" class="t-mono">JWT · JWKS · keys</text>
+      <rect class="box" x="370" y="188" width="170" height="46" rx="8"/><text x="455" y="208" text-anchor="middle">Agent layer</text><text x="455" y="224" text-anchor="middle" class="t-mono">docs · memory · advisor</text>
+      <rect class="box-dash" x="550" y="188" width="190" height="46" rx="8"/><text x="645" y="206" text-anchor="middle" class="t-muted">Storage · Functions</text><text x="645" y="222" text-anchor="middle" class="t-mono">Realtime — planned</text>
+
+      <!-- policy engine -->
+      <path class="flow" d="M135 234 L135 258"/><path class="flow" d="M290 234 L290 258"/><path class="flow" d="M455 234 L455 258"/>
+      <rect class="box-accent" x="60" y="260" width="480" height="50" rx="8"/>
+      <text x="300" y="281" text-anchor="middle" style="font-weight:600">Policy engine — the authorization boundary</text>
+      <text x="300" y="297" text-anchor="middle" class="t-mono">deny-by-default · rules → parameterized SQL · USING + WITH CHECK</text>
+
+      <!-- ports/adapters -->
+      <path class="flow" d="M300 310 L300 334"/>
+      <text x="300" y="350" text-anchor="middle" class="t-accent">DataEngine PORT</text>
+      <rect class="box" x="140" y="360" width="150" height="44" rx="8"/><text x="215" y="380" text-anchor="middle">SQLite adapter</text><text x="215" y="396" text-anchor="middle" class="t-mono">embedded · solo tier</text>
+      <rect class="box" x="310" y="360" width="150" height="44" rx="8"/><text x="385" y="380" text-anchor="middle">Postgres adapter</text><text x="385" y="396" text-anchor="middle" class="t-mono">scale tier</text>
+
+      <text x="400" y="440" text-anchor="middle" class="t-muted" style="font-size:12px">Same rules, same results — one conformance suite proves parity across both engines.</text>
+    </svg>
+
+    <h2 style="margin-top:2.5rem">A request, end to end</h2>
+    <svg class="diagram" viewBox="0 0 800 150" role="img" aria-label="Request flow">
+      <defs><marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--accent)"/></marker></defs>
+      <g>
+        <rect class="box-accent" x="12" y="55" width="110" height="44" rx="8"/><text x="67" y="81" text-anchor="middle">agent call</text>
+        <path d="M122 77 L150 77" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arrow2)"/>
+        <rect class="box" x="152" y="55" width="120" height="44" rx="8"/><text x="212" y="75" text-anchor="middle">authn</text><text x="212" y="90" text-anchor="middle" class="t-mono">principal</text>
+        <path d="M272 77 L300 77" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arrow2)"/>
+        <rect class="box-accent" x="302" y="55" width="150" height="44" rx="8"/><text x="377" y="75" text-anchor="middle">policy predicate</text><text x="377" y="90" text-anchor="middle" class="t-mono">injected into SQL</text>
+        <path d="M452 77 L480 77" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arrow2)"/>
+        <rect class="box" x="482" y="55" width="120" height="44" rx="8"/><text x="542" y="75" text-anchor="middle">engine</text><text x="542" y="90" text-anchor="middle" class="t-mono">parameterized</text>
+        <path d="M602 77 L630 77" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arrow2)"/>
+        <rect class="box" x="632" y="55" width="156" height="44" rx="8"/><text x="710" y="75" text-anchor="middle">result or envelope</text><text x="710" y="90" text-anchor="middle" class="t-mono">+ remediation</text>
+      </g>
+      <text x="400" y="128" text-anchor="middle" class="t-muted" style="font-size:12px">Deny-by-default: no matching policy → the request is denied before the engine is touched.</text>
+    </svg>
+
+    <h2 style="margin-top:2.5rem">Principles (as constraints)</h2>
+    <ul class="eyebrow-list">
+      <li><strong>Ports &amp; adapters.</strong> Every external capability sits behind an interface; adapters are chosen at startup. One build serves solo → enterprise.</li>
+      <li><strong>Authorization in the app layer, not scattered.</strong> A single enforcer compiles policy to parameterized predicates — identical on both engines — so there's one place to get security right.</li>
+      <li><strong>Contract-first.</strong> The API is specified in OpenAPI; the error envelope is a versioned contract every handler honors.</li>
+      <li><strong>Secure by default.</strong> Deny-by-default access, secrets hashed, the signing key and DB file locked down, non-solo tiers fail closed without an explicit admin key.</li>
+      <li><strong>Parity is tested, not assumed.</strong> A cross-engine conformance suite runs the security + correctness behaviors against real Postgres in CI.</li>
+    </ul>
+
+    <div class="callout" style="margin-top:2rem">The policy engine is the crown jewel and the stated highest-risk component. It's fuzz-tested (the compiler never emits a raw literal) and has been through repeated adversarial review. It still warrants an independent audit before storing real data.</div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__row">
+      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
+      <nav class="footer__links">
+        <a href="eli5.html">In plain English</a><a href="docs.html">Docs</a><a href="architecture.html">Architecture</a><a href="contact.html">Community</a><a href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>

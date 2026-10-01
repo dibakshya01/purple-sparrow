@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; box-sizing: border-box; }
+    html, body { width: 1200px; height: 630px; }
+    body {
+      background: #0b0a12; color: #ecebf7; overflow: hidden; position: relative;
+      font-family: "Space Grotesk", sans-serif;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 72px 80px;
+    }
+    .grid { position: absolute; inset: 0; background-image: linear-gradient(#272340 1px, transparent 1px), linear-gradient(90deg, #272340 1px, transparent 1px); background-size: 54px 54px; opacity: .35; -webkit-mask-image: radial-gradient(ellipse 70% 80% at 80% 10%, #000 20%, transparent 70%); }
+    .glow { position: absolute; top: -200px; right: -120px; width: 720px; height: 620px; background: radial-gradient(circle, rgba(140,110,255,.5), transparent 62%); filter: blur(30px); }
+    .row { display: flex; align-items: center; gap: 20px; position: relative; }
+    .mark { width: 76px; height: 76px; }
+    .name { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+    .name span { color: #9a86ff; }
+    h1 { position: relative; font-size: 76px; line-height: 1.02; letter-spacing: -0.03em; margin: 34px 0 20px; max-width: 16ch;
+         background: linear-gradient(180deg,#fff,#cdc4ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lede { position: relative; font-size: 27px; color: #a7a2c6; max-width: 40ch; line-height: 1.4; }
+    .chips { position: relative; display: flex; gap: 14px; margin-top: 34px; font-family: "JetBrains Mono", monospace; }
+    .chip { font-size: 18px; color: #c9c2ef; border: 1px solid #2e2a48; background: rgba(140,110,255,.08); padding: 9px 16px; border-radius: 100px; }
+    .cmd { position: absolute; bottom: 56px; left: 80px; font-family: "JetBrains Mono", monospace; font-size: 20px; color: #ecebf7; }
+    .cmd .p { color: #9a86ff; }
+  </style>
+</head>
+<body>
+  <div class="grid"></div><div class="glow"></div>
+  <div class="row">
+    <svg class="mark" viewBox="0 0 32 32" style="color:#8e79ff"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="#0b0a12"/><circle cx="18.7" cy="12.2" r="1.05" fill="#0b0a12"/></svg>
+    <div class="name"><span>Purple</span> Sparrow</div>
+  </div>
+  <h1>The agent-native backend.</h1>
+  <div class="lede">Deny-by-default policies, self-correcting errors, and native MCP — in a single Go binary.</div>
+  <div class="chips"><span class="chip">Apache-2.0</span><span class="chip">single binary</span><span class="chip">MCP-native</span><span class="chip">deny-by-default</span></div>
+  <div class="cmd"><span class="p">$</span> go build ./cmd/purplesparrow &amp;&amp; ./purplesparrow</div>
+</body>
+</html>
