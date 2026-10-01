@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/data"
 )
 
 func TestRunIsIdempotentAndCreatesCatalog(t *testing.T) {
@@ -23,7 +23,7 @@ func TestRunIsIdempotentAndCreatesCatalog(t *testing.T) {
 		t.Fatalf("second run: %v", err)
 	}
 
-	for _, tbl := range []string{"_ps_tables", "_ps_columns", "_ps_policies", "_ps_migrations"} {
+	for _, tbl := range []string{"_oc_tables", "_oc_columns", "_oc_policies", "_oc_migrations"} {
 		row, err := eng.QueryRowCtx(ctx,
 			`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, tbl)
 		if err != nil {
@@ -34,7 +34,7 @@ func TestRunIsIdempotentAndCreatesCatalog(t *testing.T) {
 		}
 	}
 
-	rows, err := eng.QueryCtx(ctx, `SELECT version FROM _ps_migrations`)
+	rows, err := eng.QueryCtx(ctx, `SELECT version FROM _oc_migrations`)
 	if err != nil {
 		t.Fatal(err)
 	}

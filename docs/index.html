@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Purple Sparrow — the agent-native backend</title>
+  <title>Orange Crow — the agent-native backend</title>
   <meta name="description" content="An open-source backend-as-a-service built for AI coding agents. Deny-by-default policy engine, self-correcting errors, one-call introspection, and native MCP — in a single Go binary." />
-  <meta property="og:title" content="Purple Sparrow — the agent-native backend" />
+  <meta property="og:title" content="Orange Crow — the agent-native backend" />
   <meta property="og:description" content="The backend your coding agent can actually operate. Single binary. Deny-by-default. MCP-native." />
   <meta property="og:image" content="assets/social-card.jpg" />
   <meta name="theme-color" content="#0b0a12" />
@@ -18,9 +18,9 @@
 <body>
   <nav class="nav">
     <div class="wrap nav__inner">
-      <a class="brand" href="index.html" aria-label="Purple Sparrow home">
-        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
-        <span style="color:var(--accent)">Purple</span>&nbsp;Sparrow
+      <a class="brand" href="index.html" aria-label="Orange Crow home">
+        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M8 21 L2.3 27.4 L10.6 24 Z" fill="currentColor" opacity=".55"/><path d="M5 23 C 6.4 17, 8 13.4, 12 10.9 C 15 9, 19.2 9, 22.2 10.1 L 28 9.3 L 22.6 12.3 C 23.6 15.2, 23 18.6, 20 20.6 C 16.4 23, 9.4 23.9, 5 23 Z" fill="currentColor"/><path d="M11.4 15.6 C 14.4 13.6, 18.6 14.1, 21.2 16.1 C 18.1 18.4, 14 18.5, 11.4 15.6 Z" fill="var(--bg)"/><circle cx="20" cy="12" r="1.15" fill="var(--bg)"/></svg>
+        <span style="color:var(--accent)">Orange</span>&nbsp;Crow
       </a>
       <button class="menu-btn" aria-label="Menu" aria-expanded="false">≡</button>
       <div class="nav__links">
@@ -29,7 +29,7 @@
         <a href="docs.html">Docs</a>
         <a href="architecture.html">Architecture</a>
         <a href="contact.html">Community</a>
-        <a href="https://github.com/dibakshya01/purple-sparrow" class="nav__gh">GitHub ↗</a>
+        <a href="https://github.com/dibakshya01/orange-crow" class="nav__gh">GitHub ↗</a>
       </div>
     </div>
   </nav>
@@ -43,12 +43,12 @@
       <p class="hero__lede">Database, auth, storage-grade policies, and tools — in one Go binary. Deny-by-default security, errors that tell an agent how to fix themselves, and native MCP. Open source, runs anywhere.</p>
       <div class="cmd">
         <span class="prompt">$</span>
-        <code>go build ./cmd/purplesparrow &amp;&amp; ./purplesparrow</code>
-        <button class="copy" data-copy="go build ./cmd/purplesparrow && ./purplesparrow">copy</button>
+        <code>go build ./cmd/orangecrow &amp;&amp; ./orangecrow</code>
+        <button class="copy" data-copy="go build ./cmd/orangecrow && ./orangecrow">copy</button>
       </div>
       <div class="hero__cta">
         <a class="btn btn--primary" href="docs.html">Get started →</a>
-        <a class="btn btn--ghost" href="https://github.com/dibakshya01/purple-sparrow">Star on GitHub</a>
+        <a class="btn btn--ghost" href="https://github.com/dibakshya01/orange-crow">Star on GitHub</a>
       </div>
       <div class="badges">
         <span class="badge"><b>Apache-2.0</b></span>
@@ -65,7 +65,7 @@
       <div class="wrap">
         <p class="section-kicker reveal">Why it exists</p>
         <h2 class="reveal">Generic backends were built for humans clicking dashboards.</h2>
-        <p class="lead reveal">Coding agents operate backends through APIs — and they fail silently, leak data through missing rules, and can't discover what a backend can do. Purple Sparrow is designed so an agent can drive it correctly and recover on its own.</p>
+        <p class="lead reveal">Coding agents operate backends through APIs — and they fail silently, leak data through missing rules, and can't discover what a backend can do. Orange Crow is designed so an agent can drive it correctly and recover on its own.</p>
         <div class="grid" style="margin-top:2rem">
           <div class="card reveal">
             <h3><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>Secure by default</h3>
@@ -89,9 +89,9 @@
         <h2 class="reveal">From one command to a governed backend.</h2>
         <div class="split" style="margin-top:2rem">
           <div class="steps">
-            <div class="step reveal"><div class="step__n"></div><div><h3>Run the binary</h3><p>One static binary, embedded SQLite — no dependencies. Point <code>PS_DATABASE_URL</code> at Postgres when you scale.</p></div></div>
+            <div class="step reveal"><div class="step__n"></div><div><h3>Run the binary</h3><p>One static binary, embedded SQLite — no dependencies. Point <code>OC_DATABASE_URL</code> at Postgres when you scale.</p></div></div>
             <div class="step reveal"><div class="step__n"></div><div><h3>Define tables &amp; policies</h3><p><code>POST /v1/tables</code>, then grant access with a policy. Nothing is readable until a rule says so.</p></div></div>
-            <div class="step reveal"><div class="step__n"></div><div><h3>Connect your agent</h3><p><code>purplesparrow mcp</code> exposes the whole backend as MCP tools for Cursor, Claude, and friends.</p></div></div>
+            <div class="step reveal"><div class="step__n"></div><div><h3>Connect your agent</h3><p><code>orangecrow mcp</code> exposes the whole backend as MCP tools for Cursor, Claude, and friends.</p></div></div>
             <div class="step reveal"><div class="step__n"></div><div><h3>Let it build</h3><p>The agent introspects, acts, and self-corrects from error remediation — like a backend engineer.</p></div></div>
           </div>
           <div class="reveal">
@@ -135,7 +135,7 @@ GET /meta  <span class="c">→ tables · columns · policies</span></pre>
             <p style="color:var(--ink-muted); max-width:52ch; margin:0 auto 1.6rem">Open source, Apache-2.0. Clone it, run it, and point your agent at it in minutes.</p>
             <div class="hero__cta">
               <a class="btn btn--primary" href="docs.html">Read the docs →</a>
-              <a class="btn btn--ghost" href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+              <a class="btn btn--ghost" href="https://github.com/dibakshya01/orange-crow">GitHub</a>
             </div>
           </div>
         </div>
@@ -145,13 +145,13 @@ GET /meta  <span class="c">→ tables · columns · policies</span></pre>
 
   <footer class="footer">
     <div class="wrap footer__row">
-      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
+      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M8 21 L2.3 27.4 L10.6 24 Z" fill="currentColor" opacity=".55"/><path d="M5 23 C 6.4 17, 8 13.4, 12 10.9 C 15 9, 19.2 9, 22.2 10.1 L 28 9.3 L 22.6 12.3 C 23.6 15.2, 23 18.6, 20 20.6 C 16.4 23, 9.4 23.9, 5 23 Z" fill="currentColor"/><path d="M11.4 15.6 C 14.4 13.6, 18.6 14.1, 21.2 16.1 C 18.1 18.4, 14 18.5, 11.4 15.6 Z" fill="var(--ink)"/><circle cx="20" cy="12" r="1.15" fill="var(--ink)"/></svg>Orange Crow</span>
       <nav class="footer__links">
         <a href="eli5.html">In plain English</a>
         <a href="docs.html">Docs</a>
         <a href="architecture.html">Architecture</a>
         <a href="contact.html">Community</a>
-        <a href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+        <a href="https://github.com/dibakshya01/orange-crow">GitHub</a>
       </nav>
     </div>
     <div class="wrap" style="margin-top:1rem; font-size:.82rem; opacity:.7">Apache-2.0 · Built in the open. Not affiliated with any other backend platform.</div>

@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dibakshya01/purple-sparrow/internal/data/ident"
+	"github.com/dibakshya01/orange-crow/internal/data/ident"
 
 	_ "modernc.org/sqlite" // pure-Go SQLite driver (no CGO)
 )

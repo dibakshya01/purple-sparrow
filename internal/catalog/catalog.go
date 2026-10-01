@@ -1,5 +1,5 @@
 // Package catalog manages user-defined tables: it validates and executes DDL and
-// keeps the _ps_* metadata in sync, always inside a transaction so the physical
+// keeps the _oc_* metadata in sync, always inside a transaction so the physical
 // table and its catalog rows never disagree.
 package catalog
 
@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dibakshya01/purple-sparrow/internal/data"
-	"github.com/dibakshya01/purple-sparrow/internal/data/ident"
+	"github.com/dibakshya01/orange-crow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/data/ident"
 )
 
 // Sentinel errors; the HTTP layer maps these to envelope codes.
@@ -104,12 +104,12 @@ func (s *Service) CreateTable(ctx context.Context, name string, cols []Column) (
 			return fmt.Errorf("create table ddl: %w", err)
 		}
 		if _, err := q.ExecCtx(ctx,
-			`INSERT INTO _ps_tables (name, created_at) VALUES (?, ?)`, name, createdAt); err != nil {
+			`INSERT INTO _oc_tables (name, created_at) VALUES (?, ?)`, name, createdAt); err != nil {
 			return err
 		}
 		for _, c := range full {
 			if _, err := q.ExecCtx(ctx,
-				`INSERT INTO _ps_columns (table_name, name, type, nullable, is_unique, ordinal)
+				`INSERT INTO _oc_columns (table_name, name, type, nullable, is_unique, ordinal)
 				 VALUES (?, ?, ?, ?, ?, ?)`,
 				name, c.Name, c.Type, boolToInt(c.Nullable), boolToInt(c.Unique), c.Ordinal); err != nil {
 				return err
@@ -133,7 +133,7 @@ func (s *Service) systemColumns() []Column {
 
 // ListTables returns the names of all user tables.
 func (s *Service) ListTables(ctx context.Context) ([]string, error) {
-	rows, err := s.eng.QueryCtx(ctx, `SELECT name FROM _ps_tables ORDER BY name`)
+	rows, err := s.eng.QueryCtx(ctx, `SELECT name FROM _oc_tables ORDER BY name`)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (s *Service) ListTables(ctx context.Context) ([]string, error) {
 
 // GetTable returns a table's metadata (columns), or ErrTableNotFound.
 func (s *Service) GetTable(ctx context.Context, name string) (*Table, error) {
-	trow, err := s.eng.QueryRowCtx(ctx, `SELECT name, created_at FROM _ps_tables WHERE name = ?`, name)
+	trow, err := s.eng.QueryRowCtx(ctx, `SELECT name, created_at FROM _oc_tables WHERE name = ?`, name)
 	if errors.Is(err, data.ErrNoRows) {
 		return nil, ErrTableNotFound
 	}
@@ -166,7 +166,7 @@ func (s *Service) GetTable(ctx context.Context, name string) (*Table, error) {
 // table has no catalog entry.
 func (s *Service) Columns(ctx context.Context, name string) ([]Column, error) {
 	rows, err := s.eng.QueryCtx(ctx,
-		`SELECT name, type, nullable, is_unique, ordinal FROM _ps_columns WHERE table_name = ? ORDER BY ordinal`, name)
+		`SELECT name, type, nullable, is_unique, ordinal FROM _oc_columns WHERE table_name = ? ORDER BY ordinal`, name)
 	if err != nil {
 		return nil, err
 	}
@@ -203,8 +203,8 @@ func (s *Service) DropTable(ctx context.Context, name string) error {
 		if _, err := tx.ExecCtx(ctx, "DROP TABLE "+q); err != nil {
 			return err
 		}
-		// Cascades to _ps_columns and _ps_policies via FK ON DELETE CASCADE.
-		_, err = tx.ExecCtx(ctx, `DELETE FROM _ps_tables WHERE name = ?`, name)
+		// Cascades to _oc_columns and _oc_policies via FK ON DELETE CASCADE.
+		_, err = tx.ExecCtx(ctx, `DELETE FROM _oc_tables WHERE name = ?`, name)
 		return err
 	})
 }
@@ -215,7 +215,7 @@ func (s *Service) TableExists(ctx context.Context, name string) (bool, error) {
 }
 
 func tableExistsTx(ctx context.Context, q data.Querier, name string) (bool, error) {
-	_, err := q.QueryRowCtx(ctx, `SELECT name FROM _ps_tables WHERE name = ?`, name)
+	_, err := q.QueryRowCtx(ctx, `SELECT name FROM _oc_tables WHERE name = ?`, name)
 	if errors.Is(err, data.ErrNoRows) {
 		return false, nil
 	}

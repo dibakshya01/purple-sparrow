@@ -6,10 +6,10 @@ package meta
 import (
 	"context"
 
-	"github.com/dibakshya01/purple-sparrow/internal/buildinfo"
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
-	"github.com/dibakshya01/purple-sparrow/internal/data"
-	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/orange-crow/internal/buildinfo"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/policy"
 )
 
 // Service builds the metadata snapshot.

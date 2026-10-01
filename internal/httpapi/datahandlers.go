@@ -12,11 +12,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/dibakshya01/purple-sparrow/internal/apierr"
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
-	"github.com/dibakshya01/purple-sparrow/internal/policy"
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
-	"github.com/dibakshya01/purple-sparrow/internal/records"
+	"github.com/dibakshya01/orange-crow/internal/apierr"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/policy"
+	"github.com/dibakshya01/orange-crow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/records"
 )
 
 const maxBodyBytes = 1 << 20 // 1 MiB

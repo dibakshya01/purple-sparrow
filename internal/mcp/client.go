@@ -1,5 +1,5 @@
 // Package mcp implements a minimal Model Context Protocol (MCP) server over stdio
-// that exposes a running Purple Sparrow backend to a coding agent as tools. The
+// that exposes a running Orange Crow backend to a coding agent as tools. The
 // MCP process is a thin client of the backend's REST API, authenticating with an
 // API key — the same architecture an external MCP server would use.
 package mcp
@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-// backend is a tiny REST client for the Purple Sparrow API.
+// backend is a tiny REST client for the Orange Crow API.
 type backend struct {
 	baseURL string
 	apiKey  string

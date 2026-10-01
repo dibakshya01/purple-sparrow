@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Purple Sparrow — docs</title>
-  <meta name="description" content="Quick start, the API surface, the CLI, and MCP setup for Purple Sparrow." />
+  <title>Orange Crow — docs</title>
+  <meta name="description" content="Quick start, the API surface, the CLI, and MCP setup for Orange Crow." />
   <link rel="icon" href="assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,9 +14,9 @@
 <body class="on-light">
   <nav class="nav">
     <div class="wrap nav__inner">
-      <a class="brand" href="index.html" aria-label="Purple Sparrow home">
-        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
-        <span style="color:var(--accent)">Purple</span>&nbsp;Sparrow
+      <a class="brand" href="index.html" aria-label="Orange Crow home">
+        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M8 21 L2.3 27.4 L10.6 24 Z" fill="currentColor" opacity=".55"/><path d="M5 23 C 6.4 17, 8 13.4, 12 10.9 C 15 9, 19.2 9, 22.2 10.1 L 28 9.3 L 22.6 12.3 C 23.6 15.2, 23 18.6, 20 20.6 C 16.4 23, 9.4 23.9, 5 23 Z" fill="currentColor"/><path d="M11.4 15.6 C 14.4 13.6, 18.6 14.1, 21.2 16.1 C 18.1 18.4, 14 18.5, 11.4 15.6 Z" fill="var(--bg)"/><circle cx="20" cy="12" r="1.15" fill="var(--bg)"/></svg>
+        <span style="color:var(--accent)">Orange</span>&nbsp;Crow
       </a>
       <button class="menu-btn" aria-label="Menu" aria-expanded="false">≡</button>
       <div class="nav__links">
@@ -25,7 +25,7 @@
         <a href="docs.html" class="active">Docs</a>
         <a href="architecture.html">Architecture</a>
         <a href="contact.html">Community</a>
-        <a href="https://github.com/dibakshya01/purple-sparrow" class="nav__gh">GitHub ↗</a>
+        <a href="https://github.com/dibakshya01/orange-crow" class="nav__gh">GitHub ↗</a>
       </div>
     </div>
   </nav>
@@ -37,19 +37,19 @@
 
     <h3 style="margin-top:2rem">1 · Build &amp; run</h3>
 <pre class="code"><span class="c"># one static binary, embedded SQLite</span>
-CGO_ENABLED=0 go build -o purplesparrow ./cmd/purplesparrow
-PS_ADMIN_API_KEY=ps_sk_dev ./purplesparrow   <span class="c"># → 127.0.0.1:8787</span></pre>
+CGO_ENABLED=0 go build -o orangecrow ./cmd/orangecrow
+OC_ADMIN_API_KEY=oc_sk_dev ./orangecrow   <span class="c"># → 127.0.0.1:8787</span></pre>
 
     <h3 style="margin-top:2rem">2 · Create a table</h3>
     <p><code>id</code> (uuid) and <code>created_at</code> are added automatically. Types: <code>text, integer, real, boolean, timestamp, uuid, json</code>.</p>
-<pre class="code">curl -H <span class="s">"Authorization: Bearer ps_sk_dev"</span> localhost:8787/v1/tables -d '{
+<pre class="code">curl -H <span class="s">"Authorization: Bearer oc_sk_dev"</span> localhost:8787/v1/tables -d '{
   "name": "todos",
   "columns": [{"name":"title","type":"text"},
               {"name":"owner_id","type":"text"}] }'</pre>
 
     <h3 style="margin-top:2rem">3 · Grant access (deny-by-default)</h3>
     <p>Nothing is readable until a policy says so. Policies compile to parameterized SQL and support <code>using</code> (which rows) and <code>check</code> (allowed new values).</p>
-<pre class="code">curl -H <span class="s">"Authorization: Bearer ps_sk_dev"</span> localhost:8787/v1/policies -d '{
+<pre class="code">curl -H <span class="s">"Authorization: Bearer oc_sk_dev"</span> localhost:8787/v1/policies -d '{
   "table": "todos", "action": "select",
   "roles": ["authenticated"],
   "using": "auth.uid() = owner_id" }'</pre>
@@ -74,21 +74,21 @@ DELETE /v1/tables/todos/records/{id}</pre>
     </table>
 
     <h2 style="margin-top:2.5rem">CLI</h2>
-<pre class="code">purplesparrow            <span class="c"># serve (default)</span>
-purplesparrow mcp        <span class="c"># MCP stdio server for coding agents</span>
-purplesparrow mcp-config <span class="c"># print an MCP client config snippet</span>
-purplesparrow version</pre>
+<pre class="code">orangecrow            <span class="c"># serve (default)</span>
+orangecrow mcp        <span class="c"># MCP stdio server for coding agents</span>
+orangecrow mcp-config <span class="c"># print an MCP client config snippet</span>
+orangecrow version</pre>
 
     <h2 style="margin-top:2.5rem">Connect an agent (MCP)</h2>
-    <p>Run <code>purplesparrow mcp-config</code> and drop the snippet into your agent's MCP config (Cursor, Claude, …). It launches <code>purplesparrow mcp</code>, which exposes the backend as tools: <code>fetch_docs, get_meta, list_tables, create_table, query_records, insert_record, create_policy, run_advisor</code>.</p>
+    <p>Run <code>orangecrow mcp-config</code> and drop the snippet into your agent's MCP config (Cursor, Claude, …). It launches <code>orangecrow mcp</code>, which exposes the backend as tools: <code>fetch_docs, get_meta, list_tables, create_table, query_records, insert_record, create_policy, run_advisor</code>.</p>
 
     <h2 style="margin-top:2.5rem">Configuration</h2>
     <table class="api">
       <tr><th>Variable</th><th>Default</th><th>Meaning</th></tr>
-      <tr><td><code>PS_ADDR</code></td><td><code>127.0.0.1:8787</code></td><td>listen address (use <code>0.0.0.0:8787</code> in containers)</td></tr>
-      <tr><td><code>PS_ADMIN_API_KEY</code></td><td><em>(solo: generated)</em></td><td>admin key; <strong>required</strong> for non-solo tiers</td></tr>
-      <tr><td><code>PS_DATABASE_URL</code></td><td><em>(unset → SQLite)</em></td><td>Postgres DSN for the scale tier</td></tr>
-      <tr><td><code>PS_DATA_DIR</code></td><td><code>./.purplesparrow</code></td><td>data directory (DB file is <code>0600</code>)</td></tr>
+      <tr><td><code>OC_ADDR</code></td><td><code>127.0.0.1:8787</code></td><td>listen address (use <code>0.0.0.0:8787</code> in containers)</td></tr>
+      <tr><td><code>OC_ADMIN_API_KEY</code></td><td><em>(solo: generated)</em></td><td>admin key; <strong>required</strong> for non-solo tiers</td></tr>
+      <tr><td><code>OC_DATABASE_URL</code></td><td><em>(unset → SQLite)</em></td><td>Postgres DSN for the scale tier</td></tr>
+      <tr><td><code>OC_DATA_DIR</code></td><td><code>./.orangecrow</code></td><td>data directory (DB file is <code>0600</code>)</td></tr>
     </table>
 
     <div class="callout" style="margin-top:2rem">Errors are an agent affordance: every non-2xx carries <code>code</code>, <code>message</code>, <code>remediation</code>, <code>next_actions</code>, and a <code>doc_ref</code>. Read them — they tell you (or your agent) how to recover.</div>
@@ -96,9 +96,9 @@ purplesparrow version</pre>
 
   <footer class="footer">
     <div class="wrap footer__row">
-      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
+      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M8 21 L2.3 27.4 L10.6 24 Z" fill="currentColor" opacity=".55"/><path d="M5 23 C 6.4 17, 8 13.4, 12 10.9 C 15 9, 19.2 9, 22.2 10.1 L 28 9.3 L 22.6 12.3 C 23.6 15.2, 23 18.6, 20 20.6 C 16.4 23, 9.4 23.9, 5 23 Z" fill="currentColor"/><path d="M11.4 15.6 C 14.4 13.6, 18.6 14.1, 21.2 16.1 C 18.1 18.4, 14 18.5, 11.4 15.6 Z" fill="var(--ink)"/><circle cx="20" cy="12" r="1.15" fill="var(--ink)"/></svg>Orange Crow</span>
       <nav class="footer__links">
-        <a href="eli5.html">In plain English</a><a href="docs.html">Docs</a><a href="architecture.html">Architecture</a><a href="contact.html">Community</a><a href="https://github.com/dibakshya01/purple-sparrow">GitHub</a>
+        <a href="eli5.html">In plain English</a><a href="docs.html">Docs</a><a href="architecture.html">Architecture</a><a href="contact.html">Community</a><a href="https://github.com/dibakshya01/orange-crow">GitHub</a>
       </nav>
     </div>
   </footer>

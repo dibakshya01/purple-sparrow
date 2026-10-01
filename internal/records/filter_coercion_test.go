@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
 )
 
 // Query filters arrive from the HTTP layer as strings (?col=op.value). They must

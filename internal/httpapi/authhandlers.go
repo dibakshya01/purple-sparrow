@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/dibakshya01/purple-sparrow/internal/apierr"
-	"github.com/dibakshya01/purple-sparrow/internal/auth"
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/apierr"
+	"github.com/dibakshya01/orange-crow/internal/auth"
+	"github.com/dibakshya01/orange-crow/internal/principal"
 )
 
 func (s *Server) mountAuthRoutes(g chi.Router) {

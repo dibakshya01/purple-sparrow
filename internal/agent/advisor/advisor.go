@@ -6,8 +6,8 @@ package advisor
 import (
 	"context"
 
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
-	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/policy"
 )
 
 // Severity levels.

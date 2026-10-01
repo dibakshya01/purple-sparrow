@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/dibakshya01/purple-sparrow/internal/agent/memory"
-	"github.com/dibakshya01/purple-sparrow/internal/apierr"
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/agent/memory"
+	"github.com/dibakshya01/orange-crow/internal/apierr"
+	"github.com/dibakshya01/orange-crow/internal/principal"
 )
 
 // --- Docs (public) --------------------------------------------------------

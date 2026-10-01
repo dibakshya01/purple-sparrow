@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
 )
 
 // Reachable client errors (missing required field, duplicate unique value) must be

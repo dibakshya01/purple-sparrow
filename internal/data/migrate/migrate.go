@@ -1,5 +1,5 @@
-// Package migrate applies ordered, embedded SQL migrations for Purple Sparrow's
-// own system schema (the _ps_* catalog). User-table DDL is separate.
+// Package migrate applies ordered, embedded SQL migrations for Orange Crow's
+// own system schema (the _oc_* catalog). User-table DDL is separate.
 package migrate
 
 import (
@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/data"
 )
 
 //go:embed migrations/*.sql
@@ -64,14 +64,14 @@ func applyOne(ctx context.Context, eng data.Engine, version, body string) error 
 			}
 		}
 		_, err := q.ExecCtx(ctx,
-			`INSERT INTO _ps_migrations (version, applied_at) VALUES (?, ?)`,
+			`INSERT INTO _oc_migrations (version, applied_at) VALUES (?, ?)`,
 			version, time.Now().UTC().Format(time.RFC3339Nano))
 		return err
 	})
 }
 
 func ensureVersionTable(ctx context.Context, eng data.Engine) error {
-	_, err := eng.ExecCtx(ctx, `CREATE TABLE IF NOT EXISTS _ps_migrations (
+	_, err := eng.ExecCtx(ctx, `CREATE TABLE IF NOT EXISTS _oc_migrations (
 		version TEXT PRIMARY KEY,
 		applied_at TEXT NOT NULL
 	)`)
@@ -79,7 +79,7 @@ func ensureVersionTable(ctx context.Context, eng data.Engine) error {
 }
 
 func appliedVersions(ctx context.Context, eng data.Engine) (map[string]bool, error) {
-	rows, err := eng.QueryCtx(ctx, `SELECT version FROM _ps_migrations`)
+	rows, err := eng.QueryCtx(ctx, `SELECT version FROM _oc_migrations`)
 	if err != nil {
 		return nil, err
 	}

@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/dibakshya01/purple-sparrow/internal/data"
-	"github.com/dibakshya01/purple-sparrow/internal/idgen"
+	"github.com/dibakshya01/orange-crow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/idgen"
 )
 
 // signingKey is an active RSA keypair used to sign/verify access tokens.
@@ -44,7 +44,7 @@ func newKeyStore(ctx context.Context, eng data.Engine) (*keyStore, error) {
 }
 
 func (ks *keyStore) load(ctx context.Context) error {
-	rows, err := ks.eng.QueryCtx(ctx, `SELECT kid, private_pem, public_pem, active FROM _ps_keypairs`)
+	rows, err := ks.eng.QueryCtx(ctx, `SELECT kid, private_pem, public_pem, active FROM _oc_keypairs`)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (ks *keyStore) generateActive(ctx context.Context) error {
 		return err
 	}
 	_, err = ks.eng.ExecCtx(ctx,
-		`INSERT INTO _ps_keypairs (kid, private_pem, public_pem, active, created_at) VALUES (?, ?, ?, 1, ?)`,
+		`INSERT INTO _oc_keypairs (kid, private_pem, public_pem, active, created_at) VALUES (?, ?, ?, 1, ?)`,
 		kid, privPEM, pubPEM, idgen.NowRFC3339())
 	if err != nil {
 		return err

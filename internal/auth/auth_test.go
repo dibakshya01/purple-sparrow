@@ -9,9 +9,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/dibakshya01/purple-sparrow/internal/data"
-	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/data/migrate"
+	"github.com/dibakshya01/orange-crow/internal/principal"
 )
 
 func newSvc(t *testing.T) (*Service, data.Engine) {
@@ -165,7 +165,7 @@ func TestResolveInvalidAndAnon(t *testing.T) {
 	if p, err := s.Resolve(ctx, ""); err != nil || !p.HasRole(principal.RoleAnon) {
 		t.Fatalf("empty credential must be anon, got %+v %v", p, err)
 	}
-	if _, err := s.Resolve(ctx, "ps_sk_does-not-exist"); !errors.Is(err, ErrInvalidCredentials) {
+	if _, err := s.Resolve(ctx, "oc_sk_does-not-exist"); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("unknown api key must be invalid, got %v", err)
 	}
 	if _, err := s.Resolve(ctx, "not-a-real-jwt"); !errors.Is(err, ErrInvalidCredentials) {
@@ -180,15 +180,15 @@ func TestAPIKeyStoredHashedAndResolvable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(plaintext, "ps_sk_") {
-		t.Fatalf("api key should have ps_sk_ prefix, got %q", plaintext)
+	if !strings.HasPrefix(plaintext, "oc_sk_") {
+		t.Fatalf("api key should have oc_sk_ prefix, got %q", plaintext)
 	}
 	p, err := s.Resolve(ctx, plaintext)
 	if err != nil || !p.IsAdmin() {
 		t.Fatalf("api key should resolve to admin, got %+v %v", p, err)
 	}
 	// The plaintext must NOT be stored anywhere; only its hash.
-	rows, err := eng.QueryCtx(ctx, `SELECT key_hash FROM _ps_api_keys`)
+	rows, err := eng.QueryCtx(ctx, `SELECT key_hash FROM _oc_api_keys`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +198,7 @@ func TestAPIKeyStoredHashedAndResolvable(t *testing.T) {
 		}
 	}
 	// A wrong key is rejected.
-	if _, err := s.Resolve(ctx, "ps_sk_wrong"); !errors.Is(err, ErrInvalidCredentials) {
+	if _, err := s.Resolve(ctx, "oc_sk_wrong"); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("wrong key must be rejected, got %v", err)
 	}
 }

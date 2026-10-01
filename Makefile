@@ -1,7 +1,7 @@
-# Purple Sparrow — developer tasks
-BINARY      := purplesparrow
-PKG         := ./cmd/purplesparrow
-MODULE      := github.com/dibakshya01/purple-sparrow
+# Orange Crow — developer tasks
+BINARY      := orangecrow
+PKG         := ./cmd/orangecrow
+MODULE      := github.com/dibakshya01/orange-crow
 VERSION     := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT      := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 DATE        := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)

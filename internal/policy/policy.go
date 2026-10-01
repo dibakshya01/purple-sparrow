@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dibakshya01/purple-sparrow/internal/data"
-	"github.com/dibakshya01/purple-sparrow/internal/idgen"
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/idgen"
+	"github.com/dibakshya01/orange-crow/internal/principal"
 )
 
 // Action is a guarded operation.
@@ -136,7 +136,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput, allowedCols []stri
 		Check:  check,
 	}
 	_, err := s.eng.ExecCtx(ctx,
-		`INSERT INTO _ps_policies (id, table_name, action, roles, using_expr, check_expr, created_at)
+		`INSERT INTO _oc_policies (id, table_name, action, roles, using_expr, check_expr, created_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		p.ID, p.Table, string(p.Action), string(rolesJSON),
 		nullIfEmpty(using), nullIfEmpty(check), idgen.NowRFC3339())
@@ -150,7 +150,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput, allowedCols []stri
 func (s *Service) List(ctx context.Context, table string) ([]Policy, error) {
 	rows, err := s.eng.QueryCtx(ctx,
 		`SELECT id, table_name, action, roles, using_expr, check_expr
-		 FROM _ps_policies WHERE table_name = ? ORDER BY action, id`, table)
+		 FROM _oc_policies WHERE table_name = ? ORDER BY action, id`, table)
 	if err != nil {
 		return nil, err
 	}

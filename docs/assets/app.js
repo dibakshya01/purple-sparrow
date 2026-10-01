@@ -1,4 +1,4 @@
-// Purple Sparrow site — small, dependency-free interactions.
+// Orange Crow site — small, dependency-free interactions.
 (function () {
   // Mobile nav toggle.
   var btn = document.querySelector('.menu-btn');

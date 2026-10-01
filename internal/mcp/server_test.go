@@ -27,7 +27,7 @@ func TestMCPInitializeListAndCall(t *testing.T) {
 	}))
 	defer backend.Close()
 
-	s := New(backend.URL, "ps_sk_test")
+	s := New(backend.URL, "oc_sk_test")
 
 	input := strings.Join([]string{
 		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`,

@@ -4,7 +4,7 @@ package buildinfo
 
 // These are overridden at build time, e.g.:
 //
-//	-ldflags "-X github.com/dibakshya01/purple-sparrow/internal/buildinfo.Version=v0.1.0"
+//	-ldflags "-X github.com/dibakshya01/orange-crow/internal/buildinfo.Version=v0.1.0"
 var (
 	Version = "dev"
 	Commit  = "none"
@@ -12,7 +12,7 @@ var (
 )
 
 // Name is the product/service name.
-const Name = "purple-sparrow"
+const Name = "orange-crow"
 
 // Info is the serializable build metadata.
 type Info struct {

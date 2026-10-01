@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dibakshya01/purple-sparrow/internal/apierr"
-	"github.com/dibakshya01/purple-sparrow/internal/auth"
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/apierr"
+	"github.com/dibakshya01/orange-crow/internal/auth"
+	"github.com/dibakshya01/orange-crow/internal/principal"
 )
 
 // principalMiddleware resolves the caller's principal via the auth service:

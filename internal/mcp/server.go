@@ -90,7 +90,7 @@ func (s *Server) dispatch(ctx context.Context, req *rpcRequest) (rpcResponse, bo
 		base.Result = map[string]any{
 			"protocolVersion": protocolVersion,
 			"capabilities":    map[string]any{"tools": map[string]any{}},
-			"serverInfo":      map[string]any{"name": "purple-sparrow", "version": "0.1"},
+			"serverInfo":      map[string]any{"name": "orange-crow", "version": "0.1"},
 		}
 		return base, false
 	case "notifications/initialized":

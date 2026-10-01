@@ -13,14 +13,14 @@ import (
 // underscores, max 63 chars total.
 var pattern = regexp.MustCompile(`^[a-z_][a-z0-9_]{0,62}$`)
 
-// systemPrefix is reserved for Purple Sparrow's own tables/columns.
-const systemPrefix = "_ps_"
+// systemPrefix is reserved for Orange Crow's own tables/columns.
+const systemPrefix = "_oc_"
 
 // Valid reports whether name is a syntactically valid identifier.
 func Valid(name string) bool { return pattern.MatchString(name) }
 
 // ValidUser reports whether name is a valid identifier a user may create: valid
-// syntax and not in the reserved _ps_ namespace.
+// syntax and not in the reserved _oc_ namespace.
 func ValidUser(name string) bool {
 	return Valid(name) && !strings.HasPrefix(name, systemPrefix)
 }

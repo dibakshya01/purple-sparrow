@@ -1,11 +1,11 @@
 # Getting started
 
-Purple Sparrow is an agent-native backend. You create tables, insert and query
+Orange Crow is an agent-native backend. You create tables, insert and query
 records, and guard everything with policies — over a REST API designed for a
 coding agent to operate.
 
 ## 1. Authenticate
-Use an admin API key for setup (header `Authorization: Bearer ps_sk_...`), or a
+Use an admin API key for setup (header `Authorization: Bearer oc_sk_...`), or a
 user access token from `/v1/auth/login`.
 
 ## 2. Create a table

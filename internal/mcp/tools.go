@@ -36,7 +36,7 @@ func (s *Server) post(ctx context.Context, path string, payload any) (string, bo
 
 func (s *Server) registerTools() {
 	s.add("fetch_docs",
-		"Fetch Purple Sparrow documentation. Omit slug to list docs; pass a slug (e.g. 'policies', 'errors', 'auth', 'getting-started') to read one.",
+		"Fetch Orange Crow documentation. Omit slug to list docs; pass a slug (e.g. 'policies', 'errors', 'auth', 'getting-started') to read one.",
 		obj(map[string]any{"slug": map[string]any{"type": "string"}}),
 		func(ctx context.Context, a map[string]any) (string, bool, error) {
 			if slug := argStr(a, "slug"); slug != "" {

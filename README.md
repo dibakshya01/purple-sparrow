@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/social-card.jpg" alt="Purple Sparrow — the agent-native backend" width="820" />
+  <img src="docs/assets/social-card.jpg" alt="Orange Crow — the agent-native backend" width="820" />
 </p>
 
-<h1 align="center">Purple Sparrow</h1>
+<h1 align="center">Orange Crow</h1>
 
 <p align="center">
   <strong>The agent-native backend.</strong><br>
@@ -11,20 +11,20 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-6d4aff"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-ea580c"></a>
   <img alt="go" src="https://img.shields.io/badge/go-1.27-00ADD8">
-  <img alt="binary" src="https://img.shields.io/badge/ships%20as-single%20static%20binary-6d4aff">
+  <img alt="binary" src="https://img.shields.io/badge/ships%20as-single%20static%20binary-ea580c">
   <img alt="engines" src="https://img.shields.io/badge/SQLite-first%20·%20Postgres%20for%20scale-16a34a">
-  <img alt="mcp" src="https://img.shields.io/badge/MCP-native-8e79ff">
+  <img alt="mcp" src="https://img.shields.io/badge/MCP-native-fb923c">
   <img alt="status" src="https://img.shields.io/badge/status-alpha-f59e0b">
   <img alt="PRs" src="https://img.shields.io/badge/PRs-welcome-brightgreen">
 </p>
 
 <p align="center">
-  <a href="https://dibakshya01.github.io/purple-sparrow/">Website</a> ·
-  <a href="https://dibakshya01.github.io/purple-sparrow/eli5.html">In plain English</a> ·
-  <a href="https://dibakshya01.github.io/purple-sparrow/docs.html">Docs</a> ·
-  <a href="https://dibakshya01.github.io/purple-sparrow/architecture.html">Architecture</a>
+  <a href="https://dibakshya01.github.io/orange-crow/">Website</a> ·
+  <a href="https://dibakshya01.github.io/orange-crow/eli5.html">In plain English</a> ·
+  <a href="https://dibakshya01.github.io/orange-crow/docs.html">Docs</a> ·
+  <a href="https://dibakshya01.github.io/orange-crow/architecture.html">Architecture</a>
 </p>
 
 ---
@@ -33,25 +33,25 @@
 
 Generic backends were built for humans clicking dashboards. **Coding agents** operate
 through APIs — and generic backends fail them in three ways: they fail *silently*,
-they leak data through *missing* access rules, and they're *undiscoverable*. Purple
-Sparrow is designed so an agent can drive it correctly and recover on its own.
+they leak data through *missing* access rules, and they're *undiscoverable*. Orange
+Crow is designed so an agent can drive it correctly and recover on its own.
 
 | | |
 |---|---|
 | 🛡️ **Secure by default** | Access is deny-by-default. An app-layer policy engine compiles rules into **parameterized** SQL with `USING` *and* `WITH CHECK`. Fuzz-tested; the compiler never emits a raw literal. |
 | 🧭 **Self-correcting** | Every error carries machine-readable `remediation` + `next_actions`. When an agent hits a wall, the response tells it how to get past it. |
 | 🔎 **Discoverable** | `GET /meta` returns the whole backend's shape in one call. Docs are served over the API. An advisor lints the config. |
-| 🪶 **Runs anywhere** | One static binary + embedded SQLite — zero dependencies for a solo dev. Point `PS_DATABASE_URL` at Postgres to scale. Same code, same behavior (CI proves parity). |
-| 🔌 **MCP-native** | `purplesparrow mcp` exposes the whole backend as tools for Cursor, Claude, and friends. |
+| 🪶 **Runs anywhere** | One static binary + embedded SQLite — zero dependencies for a solo dev. Point `OC_DATABASE_URL` at Postgres to scale. Same code, same behavior (CI proves parity). |
+| 🔌 **MCP-native** | `orangecrow mcp` exposes the whole backend as tools for Cursor, Claude, and friends. |
 
 ## Quick start
 
 ```bash
 # one static binary, embedded SQLite — no external services
-CGO_ENABLED=0 go build -o purplesparrow ./cmd/purplesparrow
-PS_ADMIN_API_KEY=ps_sk_dev ./purplesparrow            # → 127.0.0.1:8787
+CGO_ENABLED=0 go build -o orangecrow ./cmd/orangecrow
+OC_ADMIN_API_KEY=oc_sk_dev ./orangecrow            # → 127.0.0.1:8787
 
-ADMIN="Authorization: Bearer ps_sk_dev"
+ADMIN="Authorization: Bearer oc_sk_dev"
 
 # create a table (id + created_at are automatic)
 curl -s -H "$ADMIN" -X POST localhost:8787/v1/tables \
@@ -69,8 +69,8 @@ curl -s localhost:8787/docs
 curl -s -H "$ADMIN" localhost:8787/advisor
 ```
 
-Connect an agent: `purplesparrow mcp-config` prints a client config snippet;
-`purplesparrow mcp` runs the MCP stdio server.
+Connect an agent: `orangecrow mcp-config` prints a client config snippet;
+`orangecrow mcp` runs the MCP stdio server.
 
 ## What's inside
 

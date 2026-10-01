@@ -4,10 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/dibakshya01/purple-sparrow/internal/apierr"
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
-	"github.com/dibakshya01/purple-sparrow/internal/policy"
-	"github.com/dibakshya01/purple-sparrow/internal/records"
+	"github.com/dibakshya01/orange-crow/internal/apierr"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/policy"
+	"github.com/dibakshya01/orange-crow/internal/records"
 )
 
 // mapDomainError translates a service-layer error into the agent error envelope.
@@ -25,7 +25,7 @@ func mapDomainError(err error) *apierr.Error {
 			"/docs/errors#table_not_found", "GET /meta")
 	case errors.Is(err, catalog.ErrInvalidIdentifier), errors.Is(err, catalog.ErrReservedColumn):
 		return apierr.New(http.StatusBadRequest, "invalid_identifier", err.Error(),
-			"Use lowercase letters, digits and underscores; start with a letter or underscore; avoid the reserved _ps_ prefix and the managed columns id/created_at.",
+			"Use lowercase letters, digits and underscores; start with a letter or underscore; avoid the reserved _oc_ prefix and the managed columns id/created_at.",
 			"/docs/errors#invalid_identifier")
 	case errors.Is(err, catalog.ErrInvalidType):
 		return apierr.New(http.StatusBadRequest, "invalid_column_type", err.Error(),

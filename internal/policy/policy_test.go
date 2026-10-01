@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/principal"
 )
 
 // testDialect implements data.Dialect without a real database.
@@ -42,7 +42,7 @@ func TestParseValid(t *testing.T) {
 func TestParseRejectsMalicious(t *testing.T) {
 	bad := []string{
 		"1; DROP TABLE users",
-		"owner_id = (select secret from _ps_policies)",
+		"owner_id = (select secret from _oc_policies)",
 		"auth.evil()",
 		"owner_id === 1",
 		"'unterminated",

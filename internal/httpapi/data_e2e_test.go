@@ -10,20 +10,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dibakshya01/purple-sparrow/internal/agent/advisor"
-	agentdocs "github.com/dibakshya01/purple-sparrow/internal/agent/docs"
-	"github.com/dibakshya01/purple-sparrow/internal/agent/memory"
-	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
-	"github.com/dibakshya01/purple-sparrow/internal/auth"
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
-	"github.com/dibakshya01/purple-sparrow/internal/config"
-	"github.com/dibakshya01/purple-sparrow/internal/data"
-	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
-	"github.com/dibakshya01/purple-sparrow/internal/policy"
-	"github.com/dibakshya01/purple-sparrow/internal/records"
+	"github.com/dibakshya01/orange-crow/internal/agent/advisor"
+	agentdocs "github.com/dibakshya01/orange-crow/internal/agent/docs"
+	"github.com/dibakshya01/orange-crow/internal/agent/memory"
+	"github.com/dibakshya01/orange-crow/internal/agent/meta"
+	"github.com/dibakshya01/orange-crow/internal/auth"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/config"
+	"github.com/dibakshya01/orange-crow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/data/migrate"
+	"github.com/dibakshya01/orange-crow/internal/policy"
+	"github.com/dibakshya01/orange-crow/internal/records"
 )
 
-const testAdminKey = "ps_sk_test-key"
+const testAdminKey = "oc_sk_test-key"
 
 func dataServer(t *testing.T) *Server {
 	t.Helper()

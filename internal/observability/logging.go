@@ -1,12 +1,12 @@
 // Package observability wires structured logging (and, later, metrics and
-// tracing) for Purple Sparrow.
+// tracing) for Orange Crow.
 package observability
 
 import (
 	"log/slog"
 	"os"
 
-	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/orange-crow/internal/config"
 )
 
 // NewLogger builds a slog.Logger for the given level and format. Unknown levels

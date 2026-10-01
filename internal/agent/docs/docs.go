@@ -1,4 +1,4 @@
-// Package docs serves Purple Sparrow's own documentation over the API — the
+// Package docs serves Orange Crow's own documentation over the API — the
 // `fetch-docs` surface an agent calls to learn the system. Content is embedded in
 // the binary, so releases are self-contained and there is no user-input surface.
 package docs

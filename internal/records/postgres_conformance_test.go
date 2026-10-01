@@ -8,26 +8,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
-	"github.com/dibakshya01/purple-sparrow/internal/data"
-	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
-	"github.com/dibakshya01/purple-sparrow/internal/policy"
-	"github.com/dibakshya01/purple-sparrow/internal/principal"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/data"
+	"github.com/dibakshya01/orange-crow/internal/data/migrate"
+	"github.com/dibakshya01/orange-crow/internal/policy"
+	"github.com/dibakshya01/orange-crow/internal/principal"
 )
 
 // TestPostgresConformance runs the crown-jewel security + correctness behaviors
 // against a REAL Postgres, proving the policy engine, catalog, and records behave
-// identically on both engines. Gated on PS_TEST_POSTGRES_DSN; CI sets it against a
+// identically on both engines. Gated on OC_TEST_POSTGRES_DSN; CI sets it against a
 // Postgres service container. Skipped locally when unset.
 func TestPostgresConformance(t *testing.T) {
-	dsn := os.Getenv("PS_TEST_POSTGRES_DSN")
+	dsn := os.Getenv("OC_TEST_POSTGRES_DSN")
 	if dsn == "" {
-		// In the dedicated CI job PS_REQUIRE_POSTGRES=1, so a missing DSN is a hard
+		// In the dedicated CI job OC_REQUIRE_POSTGRES=1, so a missing DSN is a hard
 		// failure (never a silently-green skip that oversells "M5 works").
-		if os.Getenv("PS_REQUIRE_POSTGRES") == "1" {
-			t.Fatal("PS_REQUIRE_POSTGRES=1 but PS_TEST_POSTGRES_DSN is unset")
+		if os.Getenv("OC_REQUIRE_POSTGRES") == "1" {
+			t.Fatal("OC_REQUIRE_POSTGRES=1 but OC_TEST_POSTGRES_DSN is unset")
 		}
-		t.Skip("set PS_TEST_POSTGRES_DSN to run Postgres conformance (CI does)")
+		t.Skip("set OC_TEST_POSTGRES_DSN to run Postgres conformance (CI does)")
 	}
 	ctx := context.Background()
 	eng, err := data.OpenPostgres(dsn)

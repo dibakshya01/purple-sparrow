@@ -1,6 +1,6 @@
 # Architecture
 
-Purple Sparrow is **ports-and-adapters** throughout: every external capability sits
+Orange Crow is **ports-and-adapters** throughout: every external capability sits
 behind an interface, and adapters are chosen at startup. One build serves a solo
 laptop and a scaled cloud deployment.
 
@@ -21,14 +21,14 @@ Agents (MCP · CLI · REST)
 ## Layout
 
 ```
-cmd/purplesparrow/      main: config, engine selection, wiring, graceful shutdown
+cmd/orangecrow/      main: config, engine selection, wiring, graceful shutdown
 internal/
   apierr/               agent error envelope (code, message, remediation, next_actions)
   reqid/                request-id context + middleware
-  config/               typed PS_ config, tier resolution
+  config/               typed OC_ config, tier resolution
   httpapi/              chi router, middleware, handlers, auth bridge, error mapping
   data/                 Engine port + Dialect; sqlite.go, postgres.go; ident/, migrate/
-  catalog/              user-table DDL + _ps_ metadata (transactional)
+  catalog/              user-table DDL + _oc_ metadata (transactional)
   policy/               lexer → parser → compiler (parameterized predicates) + Enforcer
   records/              policy-enforced CRUD + type normalization + filters
   auth/                 bcrypt, RS256 JWT + JWKS, refresh rotation, API keys, resolver
@@ -54,7 +54,7 @@ openapi/                OpenAPI 3.1 source of truth
   `remediation` and `next_actions` — the agent-repair-loop affordance.
 - **Secure by default.** Deny-by-default access; secrets/keys hashed; the DB file
   (`0600`) and data dir (`0700`) locked down; non-solo tiers refuse to boot without
-  an explicit `PS_ADMIN_API_KEY`.
+  an explicit `OC_ADMIN_API_KEY`.
 
 ## Dependency direction
 
@@ -63,5 +63,5 @@ on the `data.Engine` port, never on a concrete engine. Nothing under `internal/*
 imports `httpapi`. Adapters depend on ports, not the reverse.
 
 For the deep version (specs, ADRs, milestone plans), see the design docs; the website's
-[Architecture page](https://dibakshya01.github.io/purple-sparrow/architecture.html) has
+[Architecture page](https://dibakshya01.github.io/orange-crow/architecture.html) has
 diagrams.

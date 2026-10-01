@@ -1,6 +1,6 @@
-# Contributing to Purple Sparrow
+# Contributing to Orange Crow
 
-Thanks for your interest. Purple Sparrow is built **spec-driven**: behavior is
+Thanks for your interest. Orange Crow is built **spec-driven**: behavior is
 specified and reviewed before it's implemented.
 
 ## Ground rules
@@ -27,7 +27,7 @@ make check   # fmt, vet, staticcheck, govulncheck, and race tests — run before
 
 ## Originality / clean-room policy
 
-Purple Sparrow is an independent, clean-room implementation. **Do not copy code,
+Orange Crow is an independent, clean-room implementation. **Do not copy code,
 schema DDL, error strings, or documentation prose from any other project.** You may
 reference open standards (OAuth, S3, MCP, SQL) and public API shapes. If you studied
 another implementation to understand an idea, close it and write your own. Every PR

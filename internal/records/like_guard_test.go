@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/orange-crow/internal/catalog"
 )
 
 // `like` must be rejected on non-text columns (clean 400) rather than relying on
