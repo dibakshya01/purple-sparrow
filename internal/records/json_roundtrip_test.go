@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dibakshya01/orange-crow/internal/catalog"
+	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 )
 
 // A json column must round-trip values symmetrically: a scalar string stays a

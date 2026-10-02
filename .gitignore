@@ -1,14 +1,14 @@
 # Private planning — never commit / never push to GitHub
 /_planning/
 
-# Build output (anchored to root so cmd/orangecrow/ is NOT ignored)
+# Build output (anchored to root so cmd/purplesparrow/ is NOT ignored)
 /dist/
 /bin/
-/orangecrow
+/purplesparrow
 *.exe
 
 # Runtime data dir
-/.orangecrow/
+/.purplesparrow/
 
 # OS
 .DS_Store

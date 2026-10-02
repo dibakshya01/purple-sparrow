@@ -1,6 +1,6 @@
 # Security Policy
 
-Orange Crow is backend infrastructure — security is a first-class concern.
+Purple Sparrow is backend infrastructure — security is a first-class concern.
 
 ## Reporting a vulnerability
 

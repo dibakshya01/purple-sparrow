@@ -1,5 +1,5 @@
-// Package config loads and validates Orange Crow's runtime configuration from
-// environment variables (prefix OC_) with sane defaults. Config is resolved once
+// Package config loads and validates Purple Sparrow's runtime configuration from
+// environment variables (prefix PS_) with sane defaults. Config is resolved once
 // at boot; invalid values fail fast with actionable messages rather than booting
 // partially.
 package config
@@ -47,31 +47,31 @@ type Config struct {
 	LogFormat LogFormat
 	DataDir   string
 	Tier      Tier
-	// AdminAPIKey (OC_ADMIN_API_KEY, prefix oc_sk_) grants project_admin. Empty in
+	// AdminAPIKey (PS_ADMIN_API_KEY, prefix ps_sk_) grants project_admin. Empty in
 	// config means "not set"; main generates an ephemeral one at boot for the solo
 	// tier and logs it. M2 replaces this bridge with full auth.
 	AdminAPIKey string
-	// DatabaseURL (OC_DATABASE_URL) selects the Postgres engine when set; empty
+	// DatabaseURL (PS_DATABASE_URL) selects the Postgres engine when set; empty
 	// uses the embedded SQLite engine. Carries credentials — never logged.
 	DatabaseURL string
 }
 
 // DatabasePath returns the SQLite database file path within the data dir.
 func (c Config) DatabasePath() string {
-	return filepath.Join(c.DataDir, "orangecrow.db")
+	return filepath.Join(c.DataDir, "purplesparrow.db")
 }
 
 // Defaults returns the baseline configuration before env overrides.
 //
 // Addr defaults to loopback (secure by default): a solo dev's laptop server is
 // not exposed on the LAN. Container/production deployments opt into a public bind
-// explicitly via OC_ADDR (e.g. "0.0.0.0:8787"), which the Docker image sets.
+// explicitly via PS_ADDR (e.g. "0.0.0.0:8787"), which the Docker image sets.
 func Defaults() Config {
 	return Config{
 		Addr:      "127.0.0.1:8787",
 		LogLevel:  "info",
 		LogFormat: LogJSON,
-		DataDir:   "./.orangecrow",
+		DataDir:   "./.purplesparrow",
 		Tier:      TierAuto,
 	}
 }
@@ -89,32 +89,32 @@ func (c Config) EffectiveTier() Tier {
 	return TierSolo
 }
 
-// Load reads OC_-prefixed environment variables over the defaults and validates
+// Load reads PS_-prefixed environment variables over the defaults and validates
 // the result.
 func Load() (Config, error) {
 	c := Defaults()
 
-	if v := env("OC_ADDR"); v != "" {
+	if v := env("PS_ADDR"); v != "" {
 		c.Addr = v
 	}
-	if v := env("OC_LOG_LEVEL"); v != "" {
+	if v := env("PS_LOG_LEVEL"); v != "" {
 		c.LogLevel = strings.ToLower(v)
 	}
-	if v := env("OC_LOG_FORMAT"); v != "" {
+	if v := env("PS_LOG_FORMAT"); v != "" {
 		c.LogFormat = LogFormat(strings.ToLower(v))
 	}
-	if v := env("OC_DATA_DIR"); v != "" {
+	if v := env("PS_DATA_DIR"); v != "" {
 		c.DataDir = v
 	}
-	if v := env("OC_TIER"); v != "" {
+	if v := env("PS_TIER"); v != "" {
 		c.Tier = Tier(strings.ToLower(v))
 	}
-	if v := env("OC_ADMIN_API_KEY"); v != "" {
+	if v := env("PS_ADMIN_API_KEY"); v != "" {
 		c.AdminAPIKey = v
 	}
-	if v := env("OC_DATABASE_URL"); v != "" {
+	if v := env("PS_DATABASE_URL"); v != "" {
 		c.DatabaseURL = v
-	} else if v := env("OC_POSTGRES_DSN"); v != "" {
+	} else if v := env("PS_POSTGRES_DSN"); v != "" {
 		c.DatabaseURL = v
 	}
 
@@ -124,19 +124,19 @@ func Load() (Config, error) {
 // Validate checks the config and returns the first problem found.
 func (c Config) Validate() error {
 	if c.Addr == "" {
-		return fmt.Errorf("OC_ADDR must not be empty (e.g. \":8787\")")
+		return fmt.Errorf("PS_ADDR must not be empty (e.g. \":8787\")")
 	}
 	if !validLogLevel(c.LogLevel) {
-		return fmt.Errorf("OC_LOG_LEVEL %q is invalid; use one of debug, info, warn, error", c.LogLevel)
+		return fmt.Errorf("PS_LOG_LEVEL %q is invalid; use one of debug, info, warn, error", c.LogLevel)
 	}
 	if !c.LogFormat.valid() {
-		return fmt.Errorf("OC_LOG_FORMAT %q is invalid; use json or text", c.LogFormat)
+		return fmt.Errorf("PS_LOG_FORMAT %q is invalid; use json or text", c.LogFormat)
 	}
 	if !c.Tier.valid() {
-		return fmt.Errorf("OC_TIER %q is invalid; use auto, solo, startup, or enterprise", c.Tier)
+		return fmt.Errorf("PS_TIER %q is invalid; use auto, solo, startup, or enterprise", c.Tier)
 	}
 	if c.DataDir == "" {
-		return fmt.Errorf("OC_DATA_DIR must not be empty")
+		return fmt.Errorf("PS_DATA_DIR must not be empty")
 	}
 	return nil
 }

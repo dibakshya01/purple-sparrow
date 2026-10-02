@@ -1,4 +1,4 @@
-// Package policy implements Orange Crow's app-layer authorization: a small,
+// Package policy implements Purple Sparrow's app-layer authorization: a small,
 // safe expression language for policy rules, a compiler that turns rules into
 // PARAMETERIZED SQL predicates, and an enforcer that is the single deny-by-default
 // authorization chokepoint (ADR-0003).

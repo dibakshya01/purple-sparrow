@@ -1,6 +1,6 @@
 -- Agent memory: a persistent per-subject, namespaced key/value store.
 
-CREATE TABLE _oc_memory (
+CREATE TABLE _ps_memory (
   subject    TEXT NOT NULL,
   namespace  TEXT NOT NULL,
   key        TEXT NOT NULL,

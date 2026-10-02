@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dibakshya01/orange-crow/internal/data/ident"
+	"github.com/dibakshya01/purple-sparrow/internal/data/ident"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // Postgres driver registered as "pgx"
 )

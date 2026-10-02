@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dibakshya01/orange-crow/internal/data"
-	"github.com/dibakshya01/orange-crow/internal/idgen"
-	"github.com/dibakshya01/orange-crow/internal/principal"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/idgen"
+	"github.com/dibakshya01/purple-sparrow/internal/principal"
 )
 
 const (
 	refreshTTL   = 30 * 24 * time.Hour
 	minPassword  = 8
-	apiKeyPrefix = "oc_sk_"
+	apiKeyPrefix = "ps_sk_"
 )
 
 // Sentinel errors (surfaced generically by the HTTP layer to avoid enumeration).
@@ -82,7 +82,7 @@ func (s *Service) Signup(ctx context.Context, email, password string) (*User, *T
 	u := &User{ID: idgen.NewUUID(), Email: email, Roles: roles}
 
 	_, err = s.eng.ExecCtx(ctx,
-		`INSERT INTO _oc_users (id, email, password_hash, roles, created_at) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO _ps_users (id, email, password_hash, roles, created_at) VALUES (?, ?, ?, ?, ?)`,
 		u.ID, email, hash, string(rolesJSON), idgen.NowRFC3339())
 	if err != nil {
 		if isUniqueViolation(err) {
@@ -102,7 +102,7 @@ func (s *Service) Signup(ctx context.Context, email, password string) (*User, *T
 func (s *Service) Login(ctx context.Context, email, password string) (*User, *Tokens, error) {
 	email = normalizeEmail(email)
 	row, err := s.eng.QueryRowCtx(ctx,
-		`SELECT id, email, password_hash, roles FROM _oc_users WHERE email = ?`, email)
+		`SELECT id, email, password_hash, roles FROM _ps_users WHERE email = ?`, email)
 	if errors.Is(err, data.ErrNoRows) {
 		// Run a bcrypt comparison against a dummy hash to reduce timing signal.
 		_ = VerifyPassword("$2a$12$C6UzMDM.H6dfI/f/IKcEeO4Y5r0Q0Z8b8p6f0e6a6b6c6d6e6f6g6", password)
@@ -129,7 +129,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, er
 	var out *Tokens
 	err := s.eng.Transact(ctx, func(q data.Querier) error {
 		row, err := q.QueryRowCtx(ctx,
-			`SELECT id, user_id, expires_at, used FROM _oc_refresh_tokens WHERE token_hash = ?`, h)
+			`SELECT id, user_id, expires_at, used FROM _ps_refresh_tokens WHERE token_hash = ?`, h)
 		if errors.Is(err, data.ErrNoRows) {
 			return ErrInvalidRefresh
 		}
@@ -146,14 +146,14 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, er
 		// Conditional consume closes the check-then-act race: on a multi-connection
 		// engine two concurrent refreshes both read used=0, but only one UPDATE
 		// where used=0 affects a row; the loser gets 0 rows and is rejected.
-		n, err := q.ExecCtx(ctx, `UPDATE _oc_refresh_tokens SET used = 1 WHERE id = ? AND used = 0`, str(row["id"]))
+		n, err := q.ExecCtx(ctx, `UPDATE _ps_refresh_tokens SET used = 1 WHERE id = ? AND used = 0`, str(row["id"]))
 		if err != nil {
 			return err
 		}
 		if n == 0 {
 			return ErrInvalidRefresh
 		}
-		urow, err := q.QueryRowCtx(ctx, `SELECT id, email, roles FROM _oc_users WHERE id = ?`, str(row["user_id"]))
+		urow, err := q.QueryRowCtx(ctx, `SELECT id, email, roles FROM _ps_users WHERE id = ?`, str(row["user_id"]))
 		if err != nil {
 			return err
 		}
@@ -172,7 +172,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*Tokens, er
 	return out, err
 }
 
-// Resolve turns a presented credential into a principal. Empty -> anon. A oc_
+// Resolve turns a presented credential into a principal. Empty -> anon. A ps_
 // prefixed value is an API key (hash lookup); anything else is a JWT. An invalid
 // credential is an error (401), never a silent downgrade.
 func (s *Service) Resolve(ctx context.Context, presented string) (principal.Principal, error) {
@@ -180,8 +180,8 @@ func (s *Service) Resolve(ctx context.Context, presented string) (principal.Prin
 	if presented == "" {
 		return principal.Anon(), nil
 	}
-	if strings.HasPrefix(presented, "oc_") {
-		row, err := s.eng.QueryRowCtx(ctx, `SELECT roles FROM _oc_api_keys WHERE key_hash = ?`, sha256Hex(presented))
+	if strings.HasPrefix(presented, "ps_") {
+		row, err := s.eng.QueryRowCtx(ctx, `SELECT roles FROM _ps_api_keys WHERE key_hash = ?`, sha256Hex(presented))
 		if errors.Is(err, data.ErrNoRows) {
 			return principal.Principal{}, ErrInvalidCredentials
 		}
@@ -204,7 +204,7 @@ func (s *Service) CreateAPIKey(ctx context.Context, name string, roles []string)
 	id = idgen.NewUUID()
 	rolesJSON, _ := json.Marshal(roles)
 	_, err = s.eng.ExecCtx(ctx,
-		`INSERT INTO _oc_api_keys (id, name, key_hash, roles, created_at) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO _ps_api_keys (id, name, key_hash, roles, created_at) VALUES (?, ?, ?, ?, ?)`,
 		id, name, sha256Hex(plaintext), string(rolesJSON), idgen.NowRFC3339())
 	if err != nil {
 		return "", "", err
@@ -214,7 +214,7 @@ func (s *Service) CreateAPIKey(ctx context.Context, name string, roles []string)
 
 // ListAPIKeys returns key metadata (never the secret).
 func (s *Service) ListAPIKeys(ctx context.Context) ([]map[string]any, error) {
-	rows, err := s.eng.QueryCtx(ctx, `SELECT id, name, roles, created_at FROM _oc_api_keys ORDER BY created_at`)
+	rows, err := s.eng.QueryCtx(ctx, `SELECT id, name, roles, created_at FROM _ps_api_keys ORDER BY created_at`)
 	if err != nil {
 		return nil, err
 	}
@@ -228,14 +228,14 @@ func (s *Service) ListAPIKeys(ctx context.Context) ([]map[string]any, error) {
 	return out, nil
 }
 
-// SeedAdminKey registers a fixed admin key (from OC_ADMIN_API_KEY) as a
+// SeedAdminKey registers a fixed admin key (from PS_ADMIN_API_KEY) as a
 // project_admin key if it is not already present. Idempotent.
 func (s *Service) SeedAdminKey(ctx context.Context, key string) error {
 	if key == "" {
 		return nil
 	}
 	h := sha256Hex(key)
-	_, err := s.eng.QueryRowCtx(ctx, `SELECT id FROM _oc_api_keys WHERE key_hash = ?`, h)
+	_, err := s.eng.QueryRowCtx(ctx, `SELECT id FROM _ps_api_keys WHERE key_hash = ?`, h)
 	if err == nil {
 		return nil // already present
 	}
@@ -244,7 +244,7 @@ func (s *Service) SeedAdminKey(ctx context.Context, key string) error {
 	}
 	rolesJSON, _ := json.Marshal([]string{principal.RoleProjectAdmin})
 	_, err = s.eng.ExecCtx(ctx,
-		`INSERT INTO _oc_api_keys (id, name, key_hash, roles, created_at) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO _ps_api_keys (id, name, key_hash, roles, created_at) VALUES (?, ?, ?, ?, ?)`,
 		idgen.NewUUID(), "seed-admin", h, string(rolesJSON), idgen.NowRFC3339())
 	return err
 }
@@ -268,7 +268,7 @@ func (s *Service) issueTokens(ctx context.Context, u *User) (*Tokens, error) {
 func (s *Service) mintRefresh(ctx context.Context, q data.Querier, userID string) (string, error) {
 	token := randHex(32)
 	_, err := q.ExecCtx(ctx,
-		`INSERT INTO _oc_refresh_tokens (id, user_id, token_hash, expires_at, used, created_at) VALUES (?, ?, ?, ?, 0, ?)`,
+		`INSERT INTO _ps_refresh_tokens (id, user_id, token_hash, expires_at, used, created_at) VALUES (?, ?, ?, ?, 0, ?)`,
 		idgen.NewUUID(), userID, sha256Hex(token), time.Now().Add(refreshTTL).UTC().Format(time.RFC3339Nano), idgen.NowRFC3339())
 	if err != nil {
 		return "", err

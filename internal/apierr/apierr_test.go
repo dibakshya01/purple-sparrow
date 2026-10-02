@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dibakshya01/orange-crow/internal/reqid"
+	"github.com/dibakshya01/purple-sparrow/internal/reqid"
 )
 
 func TestWriteProducesEnvelope(t *testing.T) {

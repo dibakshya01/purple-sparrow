@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dibakshya01/orange-crow/internal/apierr"
-	"github.com/dibakshya01/orange-crow/internal/config"
-	"github.com/dibakshya01/orange-crow/internal/reqid"
+	"github.com/dibakshya01/purple-sparrow/internal/apierr"
+	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/purple-sparrow/internal/reqid"
 )
 
 func testServer() *Server {

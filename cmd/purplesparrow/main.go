@@ -1,4 +1,4 @@
-// Command orangecrow is the single-binary entry point for the Orange Crow
+// Command purplesparrow is the single-binary entry point for the Purple Sparrow
 // agent-native backend.
 package main
 
@@ -14,22 +14,22 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dibakshya01/orange-crow/internal/agent/advisor"
-	agentdocs "github.com/dibakshya01/orange-crow/internal/agent/docs"
-	"github.com/dibakshya01/orange-crow/internal/agent/memory"
-	"github.com/dibakshya01/orange-crow/internal/agent/meta"
-	"github.com/dibakshya01/orange-crow/internal/auth"
-	"github.com/dibakshya01/orange-crow/internal/buildinfo"
-	"github.com/dibakshya01/orange-crow/internal/catalog"
-	"github.com/dibakshya01/orange-crow/internal/config"
-	"github.com/dibakshya01/orange-crow/internal/data"
-	"github.com/dibakshya01/orange-crow/internal/data/migrate"
-	"github.com/dibakshya01/orange-crow/internal/httpapi"
-	"github.com/dibakshya01/orange-crow/internal/idgen"
-	"github.com/dibakshya01/orange-crow/internal/mcp"
-	"github.com/dibakshya01/orange-crow/internal/observability"
-	"github.com/dibakshya01/orange-crow/internal/policy"
-	"github.com/dibakshya01/orange-crow/internal/records"
+	"github.com/dibakshya01/purple-sparrow/internal/agent/advisor"
+	agentdocs "github.com/dibakshya01/purple-sparrow/internal/agent/docs"
+	"github.com/dibakshya01/purple-sparrow/internal/agent/memory"
+	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
+	"github.com/dibakshya01/purple-sparrow/internal/auth"
+	"github.com/dibakshya01/purple-sparrow/internal/buildinfo"
+	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
+	"github.com/dibakshya01/purple-sparrow/internal/httpapi"
+	"github.com/dibakshya01/purple-sparrow/internal/idgen"
+	"github.com/dibakshya01/purple-sparrow/internal/mcp"
+	"github.com/dibakshya01/purple-sparrow/internal/observability"
+	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/purple-sparrow/internal/records"
 )
 
 func main() {
@@ -69,31 +69,31 @@ func main() {
 // runMCP runs the MCP stdio server. It speaks JSON-RPC on stdout, so it must not
 // write anything else there; diagnostics go to stderr.
 func runMCP() error {
-	baseURL := os.Getenv("OC_API_URL")
+	baseURL := os.Getenv("PS_API_URL")
 	if baseURL == "" {
 		baseURL = "http://127.0.0.1:8787"
 	}
-	apiKey := os.Getenv("OC_API_KEY")
+	apiKey := os.Getenv("PS_API_KEY")
 	if apiKey == "" {
-		apiKey = os.Getenv("OC_ADMIN_API_KEY")
+		apiKey = os.Getenv("PS_ADMIN_API_KEY")
 	}
-	fmt.Fprintf(os.Stderr, "orange-crow mcp: proxying to %s\n", baseURL)
+	fmt.Fprintf(os.Stderr, "purple-sparrow mcp: proxying to %s\n", baseURL)
 	return mcp.New(baseURL, apiKey).Run(context.Background(), os.Stdin, os.Stdout)
 }
 
 func printMCPConfig() {
-	baseURL := os.Getenv("OC_API_URL")
+	baseURL := os.Getenv("PS_API_URL")
 	if baseURL == "" {
 		baseURL = "http://127.0.0.1:8787"
 	}
 	cfg := map[string]any{
 		"mcpServers": map[string]any{
-			"orange-crow": map[string]any{
-				"command": "orangecrow",
+			"purple-sparrow": map[string]any{
+				"command": "purplesparrow",
 				"args":    []string{"mcp"},
 				"env": map[string]string{
-					"OC_API_URL": baseURL,
-					"OC_API_KEY": "<your-api-key>",
+					"PS_API_URL": baseURL,
+					"PS_API_KEY": "<your-api-key>",
 				},
 			},
 		},
@@ -103,16 +103,16 @@ func printMCPConfig() {
 }
 
 func printHelp() {
-	fmt.Print(`orange-crow — agent-native backend
+	fmt.Print(`purple-sparrow — agent-native backend
 
 Usage:
-  orangecrow [serve]     Run the backend server (default)
-  orangecrow mcp         Run the MCP stdio server (for coding agents)
-  orangecrow mcp-config  Print an MCP client config snippet
-  orangecrow version     Print version
-  orangecrow help        Show this help
+  purplesparrow [serve]     Run the backend server (default)
+  purplesparrow mcp         Run the MCP stdio server (for coding agents)
+  purplesparrow mcp-config  Print an MCP client config snippet
+  purplesparrow version     Print version
+  purplesparrow help        Show this help
 
-Configuration is via OC_-prefixed environment variables (see the docs/README).
+Configuration is via PS_-prefixed environment variables (see the docs/README).
 `)
 }
 
@@ -124,7 +124,7 @@ func run() error {
 
 	logger := observability.NewLogger(cfg.LogLevel, cfg.LogFormat)
 	info := buildinfo.Get()
-	logger.Info("starting orange-crow",
+	logger.Info("starting purple-sparrow",
 		"version", info.Version, "commit", info.Commit,
 		"addr", cfg.Addr, "tier", string(cfg.Tier), "effective_tier", string(cfg.EffectiveTier()))
 
@@ -135,7 +135,7 @@ func run() error {
 		return err
 	}
 
-	// Data engine: Postgres when OC_DATABASE_URL is set, else embedded SQLite.
+	// Data engine: Postgres when PS_DATABASE_URL is set, else embedded SQLite.
 	var eng data.Engine
 	if cfg.DatabaseURL != "" {
 		pg, perr := data.OpenPostgres(cfg.DatabaseURL)
@@ -175,12 +175,12 @@ func run() error {
 	adminKey := cfg.AdminAPIKey
 	if adminKey == "" {
 		if cfg.EffectiveTier() != config.TierSolo {
-			return fmt.Errorf("OC_ADMIN_API_KEY is required for the %q tier; refusing to generate and log an ephemeral admin credential in a non-solo deployment", cfg.EffectiveTier())
+			return fmt.Errorf("PS_ADMIN_API_KEY is required for the %q tier; refusing to generate and log an ephemeral admin credential in a non-solo deployment", cfg.EffectiveTier())
 		}
-		adminKey = "oc_sk_" + idgen.NewUUID()
-		logger.Warn("OC_ADMIN_API_KEY not set; generated an ephemeral admin key for this solo-tier run",
+		adminKey = "ps_sk_" + idgen.NewUUID()
+		logger.Warn("PS_ADMIN_API_KEY not set; generated an ephemeral admin key for this solo-tier run",
 			"admin_api_key", adminKey,
-			"hint", "set OC_ADMIN_API_KEY to keep it stable and out of logs")
+			"hint", "set PS_ADMIN_API_KEY to keep it stable and out of logs")
 	}
 	if err := authSvc.SeedAdminKey(context.Background(), adminKey); err != nil {
 		return err

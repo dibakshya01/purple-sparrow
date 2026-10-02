@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/dibakshya01/orange-crow/internal/data"
-	"github.com/dibakshya01/orange-crow/internal/principal"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/principal"
 )
 
 // Enforcer is the single authorization chokepoint. Deny-by-default: unless a
@@ -19,7 +19,7 @@ func NewEnforcer(eng data.Engine) *Enforcer { return &Enforcer{eng: eng} }
 func (e *Enforcer) matching(ctx context.Context, q data.Querier, table string, action Action, p principal.Principal) ([]Policy, error) {
 	rows, err := q.QueryCtx(ctx,
 		`SELECT id, table_name, action, roles, using_expr, check_expr
-		 FROM _oc_policies WHERE table_name = ? AND action = ?`, table, string(action))
+		 FROM _ps_policies WHERE table_name = ? AND action = ?`, table, string(action))
 	if err != nil {
 		return nil, err
 	}

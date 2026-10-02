@@ -1,4 +1,4 @@
-<!-- Thanks for contributing to Orange Crow. Keep PRs small and focused. -->
+<!-- Thanks for contributing to Purple Sparrow. Keep PRs small and focused. -->
 
 ## What & why
 

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	issuer    = "orange-crow"
+	issuer    = "purple-sparrow"
 	accessTTL = 15 * time.Minute
 	clockSkew = 30 * time.Second
 )

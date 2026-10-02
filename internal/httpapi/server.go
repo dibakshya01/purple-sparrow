@@ -10,18 +10,18 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/dibakshya01/orange-crow/internal/agent/advisor"
-	agentdocs "github.com/dibakshya01/orange-crow/internal/agent/docs"
-	"github.com/dibakshya01/orange-crow/internal/agent/memory"
-	"github.com/dibakshya01/orange-crow/internal/agent/meta"
-	"github.com/dibakshya01/orange-crow/internal/apierr"
-	"github.com/dibakshya01/orange-crow/internal/auth"
-	"github.com/dibakshya01/orange-crow/internal/catalog"
-	"github.com/dibakshya01/orange-crow/internal/config"
-	"github.com/dibakshya01/orange-crow/internal/policy"
-	"github.com/dibakshya01/orange-crow/internal/records"
-	"github.com/dibakshya01/orange-crow/internal/reqid"
-	"github.com/dibakshya01/orange-crow/internal/web"
+	"github.com/dibakshya01/purple-sparrow/internal/agent/advisor"
+	agentdocs "github.com/dibakshya01/purple-sparrow/internal/agent/docs"
+	"github.com/dibakshya01/purple-sparrow/internal/agent/memory"
+	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
+	"github.com/dibakshya01/purple-sparrow/internal/apierr"
+	"github.com/dibakshya01/purple-sparrow/internal/auth"
+	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/purple-sparrow/internal/records"
+	"github.com/dibakshya01/purple-sparrow/internal/reqid"
+	"github.com/dibakshya01/purple-sparrow/internal/web"
 )
 
 // Deps are the service dependencies for the data plane. When Catalog is nil the

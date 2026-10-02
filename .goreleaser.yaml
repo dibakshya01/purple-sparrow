@@ -1,17 +1,17 @@
-# goreleaser config for Orange Crow single-binary releases.
+# goreleaser config for Purple Sparrow single-binary releases.
 # Validate with: go run github.com/goreleaser/goreleaser/v2@latest check
 version: 2
 
-project_name: orange-crow
+project_name: purple-sparrow
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: orangecrow
-    main: ./cmd/orangecrow
-    binary: orangecrow
+  - id: purplesparrow
+    main: ./cmd/purplesparrow
+    binary: purplesparrow
     env:
       - CGO_ENABLED=0
     goos: [linux, darwin, windows]
@@ -20,9 +20,9 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X github.com/dibakshya01/orange-crow/internal/buildinfo.Version={{.Version}}
-      - -X github.com/dibakshya01/orange-crow/internal/buildinfo.Commit={{.ShortCommit}}
-      - -X github.com/dibakshya01/orange-crow/internal/buildinfo.Date={{.Date}}
+      - -X github.com/dibakshya01/purple-sparrow/internal/buildinfo.Version={{.Version}}
+      - -X github.com/dibakshya01/purple-sparrow/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/dibakshya01/purple-sparrow/internal/buildinfo.Date={{.Date}}
 
 archives:
   - formats: [tar.gz]

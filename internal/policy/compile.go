@@ -3,8 +3,8 @@ package policy
 import (
 	"fmt"
 
-	"github.com/dibakshya01/orange-crow/internal/data"
-	"github.com/dibakshya01/orange-crow/internal/principal"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/principal"
 )
 
 // compileCtx carries the state a compilation needs. All value operands are bound

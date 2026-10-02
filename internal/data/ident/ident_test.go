@@ -11,7 +11,7 @@ func TestValidUser(t *testing.T) {
 	}
 	bad := []string{
 		"", "Todos", "1table", "has space", "drop;table", `"quoted"`,
-		"_oc_tables", "café", "a-b", "toolong_" + string(make([]byte, 70)),
+		"_ps_tables", "café", "a-b", "toolong_" + string(make([]byte, 70)),
 	}
 	for _, b := range bad {
 		if ValidUser(b) {

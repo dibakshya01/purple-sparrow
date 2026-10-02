@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/dibakshya01/orange-crow/internal/apierr"
-	"github.com/dibakshya01/orange-crow/internal/buildinfo"
+	"github.com/dibakshya01/purple-sparrow/internal/apierr"
+	"github.com/dibakshya01/purple-sparrow/internal/buildinfo"
 )
 
 // writeJSON writes v as JSON with the given status. On encode failure it falls

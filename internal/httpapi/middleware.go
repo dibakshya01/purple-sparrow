@@ -6,8 +6,8 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/dibakshya01/orange-crow/internal/apierr"
-	"github.com/dibakshya01/orange-crow/internal/reqid"
+	"github.com/dibakshya01/purple-sparrow/internal/apierr"
+	"github.com/dibakshya01/purple-sparrow/internal/reqid"
 )
 
 // recoverer converts panics into a generic 500 envelope. The stack trace is

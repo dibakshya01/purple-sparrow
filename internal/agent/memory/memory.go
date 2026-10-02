@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/dibakshya01/orange-crow/internal/data"
-	"github.com/dibakshya01/orange-crow/internal/data/ident"
-	"github.com/dibakshya01/orange-crow/internal/idgen"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/data/ident"
+	"github.com/dibakshya01/purple-sparrow/internal/idgen"
 )
 
 // ErrNotFound is returned when a key does not exist for the subject.
@@ -45,7 +45,7 @@ func (s *Service) Set(ctx context.Context, subject, namespace, key string, value
 		return err
 	}
 	_, err = s.eng.ExecCtx(ctx,
-		`INSERT INTO _oc_memory (subject, namespace, key, value, updated_at) VALUES (?, ?, ?, ?, ?)
+		`INSERT INTO _ps_memory (subject, namespace, key, value, updated_at) VALUES (?, ?, ?, ?, ?)
 		 ON CONFLICT(subject, namespace, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
 		subject, namespace, key, string(raw), idgen.NowRFC3339())
 	return err
@@ -54,7 +54,7 @@ func (s *Service) Set(ctx context.Context, subject, namespace, key string, value
 // Get returns a value, or ErrNotFound.
 func (s *Service) Get(ctx context.Context, subject, namespace, key string) (*Entry, error) {
 	row, err := s.eng.QueryRowCtx(ctx,
-		`SELECT value, updated_at FROM _oc_memory WHERE subject = ? AND namespace = ? AND key = ?`,
+		`SELECT value, updated_at FROM _ps_memory WHERE subject = ? AND namespace = ? AND key = ?`,
 		subject, namespace, key)
 	if errors.Is(err, data.ErrNoRows) {
 		return nil, ErrNotFound
@@ -68,7 +68,7 @@ func (s *Service) Get(ctx context.Context, subject, namespace, key string) (*Ent
 // List returns all entries in a namespace for the subject.
 func (s *Service) List(ctx context.Context, subject, namespace string) ([]Entry, error) {
 	rows, err := s.eng.QueryCtx(ctx,
-		`SELECT key, value, updated_at FROM _oc_memory WHERE subject = ? AND namespace = ? ORDER BY key`,
+		`SELECT key, value, updated_at FROM _ps_memory WHERE subject = ? AND namespace = ? ORDER BY key`,
 		subject, namespace)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (s *Service) List(ctx context.Context, subject, namespace string) ([]Entry,
 // Delete removes a key; returns ErrNotFound if absent.
 func (s *Service) Delete(ctx context.Context, subject, namespace, key string) error {
 	n, err := s.eng.ExecCtx(ctx,
-		`DELETE FROM _oc_memory WHERE subject = ? AND namespace = ? AND key = ?`, subject, namespace, key)
+		`DELETE FROM _ps_memory WHERE subject = ? AND namespace = ? AND key = ?`, subject, namespace, key)
 	if err != nil {
 		return err
 	}

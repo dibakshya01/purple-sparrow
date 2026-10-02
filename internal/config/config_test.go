@@ -9,10 +9,10 @@ func TestDefaultsAreValid(t *testing.T) {
 }
 
 func TestLoadAppliesEnvOverrides(t *testing.T) {
-	t.Setenv("OC_ADDR", ":9999")
-	t.Setenv("OC_LOG_LEVEL", "debug")
-	t.Setenv("OC_LOG_FORMAT", "text")
-	t.Setenv("OC_TIER", "solo")
+	t.Setenv("PS_ADDR", ":9999")
+	t.Setenv("PS_LOG_LEVEL", "debug")
+	t.Setenv("PS_LOG_FORMAT", "text")
+	t.Setenv("PS_TIER", "solo")
 
 	c, err := Load()
 	if err != nil {
@@ -33,15 +33,15 @@ func TestLoadAppliesEnvOverrides(t *testing.T) {
 }
 
 func TestLoadRejectsInvalidTier(t *testing.T) {
-	t.Setenv("OC_TIER", "bogus")
+	t.Setenv("PS_TIER", "bogus")
 	if _, err := Load(); err == nil {
-		t.Fatal("expected error for invalid OC_TIER, got nil")
+		t.Fatal("expected error for invalid PS_TIER, got nil")
 	}
 }
 
 func TestLoadRejectsInvalidLogLevel(t *testing.T) {
-	t.Setenv("OC_LOG_LEVEL", "louder")
+	t.Setenv("PS_LOG_LEVEL", "louder")
 	if _, err := Load(); err == nil {
-		t.Fatal("expected error for invalid OC_LOG_LEVEL, got nil")
+		t.Fatal("expected error for invalid PS_LOG_LEVEL, got nil")
 	}
 }

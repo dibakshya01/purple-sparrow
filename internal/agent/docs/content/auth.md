@@ -4,7 +4,7 @@
 Send one of these as `Authorization: Bearer <value>` (or `X-API-Key`):
 - **User access token** — a short-lived RS256 JWT from signup/login. Verify
   externally via JWKS at `/.well-known/jwks.json`.
-- **API key** `oc_sk_...` — server-to-server; carries roles (e.g. project_admin).
+- **API key** `ps_sk_...` — server-to-server; carries roles (e.g. project_admin).
 - **(none)** — you are `anon`.
 
 An invalid credential returns `401`; omitting it makes you `anon`.

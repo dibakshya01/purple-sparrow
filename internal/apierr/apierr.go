@@ -1,4 +1,4 @@
-// Package apierr defines Orange Crow's agent-native error envelope (ADR-0006).
+// Package apierr defines Purple Sparrow's agent-native error envelope (ADR-0006).
 //
 // Every non-2xx response across the whole service is written through this
 // package so agents always receive a machine-readable, self-correcting error:
@@ -12,7 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/dibakshya01/orange-crow/internal/reqid"
+	"github.com/dibakshya01/purple-sparrow/internal/reqid"
 )
 
 // Detail is the body of an error response.

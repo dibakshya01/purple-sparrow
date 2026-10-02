@@ -1,9 +1,9 @@
-# Orange Crow API — OpenAPI 3.1 source of truth (ADR-0004).
+# Purple Sparrow API — OpenAPI 3.1 source of truth (ADR-0004).
 # M0 seeds the document and the error-envelope schema. From M1, handler types and
 # the MCP tool surface are generated/derived from this file (`make generate`).
 openapi: 3.1.0
 info:
-  title: Orange Crow API
+  title: Purple Sparrow API
   version: 0.0.0
   description: Agent-native backend platform. REST surface; the same surface is exposed as MCP tools.
   license:

@@ -14,11 +14,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/dibakshya01/orange-crow/internal/catalog"
-	"github.com/dibakshya01/orange-crow/internal/data"
-	"github.com/dibakshya01/orange-crow/internal/idgen"
-	"github.com/dibakshya01/orange-crow/internal/policy"
-	"github.com/dibakshya01/orange-crow/internal/principal"
+	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/idgen"
+	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/purple-sparrow/internal/principal"
 )
 
 const (

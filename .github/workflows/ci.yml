@@ -53,7 +53,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: orangecrow_test
+          POSTGRES_DB: purplesparrow_test
           # C collation so TEXT ordering matches SQLite's BINARY collation.
           POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
         ports:
@@ -71,6 +71,6 @@ jobs:
           check-latest: true
       - name: Postgres conformance (same policy/records behavior on both engines)
         env:
-          OC_TEST_POSTGRES_DSN: postgres://postgres:postgres@localhost:5432/orangecrow_test?sslmode=disable
-          OC_REQUIRE_POSTGRES: "1" # hard-fail if the DSN is somehow unset (no silent skip)
+          PS_TEST_POSTGRES_DSN: postgres://postgres:postgres@localhost:5432/purplesparrow_test?sslmode=disable
+          PS_REQUIRE_POSTGRES: "1" # hard-fail if the DSN is somehow unset (no silent skip)
         run: go test ./internal/records/ -run TestPostgresConformance -v

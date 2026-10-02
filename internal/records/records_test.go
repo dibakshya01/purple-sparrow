@@ -5,11 +5,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dibakshya01/orange-crow/internal/catalog"
-	"github.com/dibakshya01/orange-crow/internal/data"
-	"github.com/dibakshya01/orange-crow/internal/data/migrate"
-	"github.com/dibakshya01/orange-crow/internal/policy"
-	"github.com/dibakshya01/orange-crow/internal/principal"
+	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
+	"github.com/dibakshya01/purple-sparrow/internal/policy"
+	"github.com/dibakshya01/purple-sparrow/internal/principal"
 )
 
 type stack struct {

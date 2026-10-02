@@ -1,4 +1,4 @@
-module github.com/dibakshya01/orange-crow
+module github.com/dibakshya01/purple-sparrow
 
 go 1.27
 
