@@ -16,10 +16,11 @@
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
+  <div class="progress-bar" id="progress" aria-hidden="true"></div>
   <nav class="nav">
     <div class="wrap nav__inner">
       <a class="brand" href="index.html" aria-label="Purple Sparrow home">
-        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
+        <svg viewBox="0 0 32 32" style="color:var(--accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path class="wing" d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>
         <span style="color:var(--accent)">Purple</span>&nbsp;Sparrow
       </a>
       <button class="menu-btn" aria-label="Menu" aria-expanded="false">≡</button>
@@ -37,8 +38,9 @@
   <header class="hero">
     <div class="hero__grid"></div>
     <div class="hero__glow"></div>
+    <div class="hero__spot" aria-hidden="true"></div>
     <div class="wrap hero__inner">
-      <span class="kicker">● Agent-native backend</span>
+      <span class="kicker"><span class="dot" aria-hidden="true"></span>Agent-native backend</span>
       <h1>The backend your coding agent can actually operate.</h1>
       <p class="hero__lede">Database, auth, storage-grade policies, and tools — in one Go binary. Deny-by-default security, errors that tell an agent how to fix themselves, and native MCP. Open source, runs anywhere.</p>
       <div class="cmd">
@@ -61,6 +63,27 @@
   </header>
 
   <main>
+    <section class="demo-section">
+      <div class="wrap" style="text-align:center">
+        <p class="section-kicker reveal">See it think</p>
+        <h2 class="reveal">Watch an agent hit a wall — and climb it.</h2>
+        <p class="lead reveal" style="margin:0 auto">Deny-by-default means the first request is <em>supposed</em> to fail. The difference: the error hands the agent the fix, so it recovers on its own — no human in the loop.</p>
+        <div class="demo-wrap reveal">
+          <div class="demo" id="demo">
+            <div class="demo__bar">
+              <span class="demo__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="demo__title">agent ↔ purplesparrow</span>
+              <span class="demo__live"><i></i> live</span>
+            </div>
+            <div class="demo__screen" id="demo-screen" role="img" aria-label="An agent requests records and is denied with a 403 policy_denied error whose remediation tells it to add a SELECT policy; it posts the policy, gets 201, retries, and gets 200 with the record."></div>
+          </div>
+          <div class="demo__foot">
+            <button class="demo__replay" id="demo-replay" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.3"/><path d="M3 3v4h4"/></svg>Replay</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section>
       <div class="wrap">
         <p class="section-kicker reveal">Why it exists</p>
@@ -145,7 +168,7 @@ GET /meta  <span class="c">→ tables · columns · policies</span></pre>
 
   <footer class="footer">
     <div class="wrap footer__row">
-      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
+      <span class="brand" style="color:var(--ink-text)"><svg viewBox="0 0 32 32" style="width:22px;height:22px;color:var(--ink-accent)" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path class="wing" d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--ink)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--ink)"/></svg>Purple Sparrow</span>
       <nav class="footer__links">
         <a href="eli5.html">In plain English</a>
         <a href="docs.html">Docs</a>
