@@ -79,29 +79,35 @@ Agents (MCP · CLI · REST)
         │
    HTTP gateway  — request-id · authn · recovery · access-log · security-headers
         │
-  Data+Records · Auth · Agent layer(docs/memory/advisor)  · [Storage/Functions/Realtime — planned]
+  Data+Records · Auth · Storage · Functions · Realtime · Agent layer · Dashboard
         │
   ┌───────────────── Policy engine (deny-by-default, USING + WITH CHECK) ─────────────────┐
   │                   the authorization boundary — one place to get right                  │
   └───────────────────────────────────────────────────────────────────────────────────────┘
         │
-   DataEngine port →  SQLite adapter (solo)   |   Postgres adapter (scale)
+   DataEngine · BlobStore · FuncRunner · EventBus ports
+        │
+   SQLite + local FS (solo)      |      Postgres + S3 (scale)
 ```
 
 - **Data + policy** — tables, records CRUD, PostgREST-style filters; every read row-filtered, every write checked.
 - **Auth** — email/password, RS256 JWTs via JWKS, single-use refresh rotation, hashed API keys.
+- **Storage** — buckets + objects, ownership-scoped access, public buckets, presigned URLs; local FS or S3.
+- **Functions** — edge functions as sandboxed WASM (WASI/wazero): no fs/net/subprocess, explicit secrets, timeout + memory caps.
+- **Realtime** — row-change events over SSE, filtered per subscriber by the policy engine.
 - **Agent layer** — docs-over-API, per-subject memory, an advisor for risky config.
+- **Dashboard** — a dependency-free admin console embedded in the binary, served at `/`.
 - **MCP + CLI** — the whole surface as agent tools; `serve` / `mcp` / `mcp-config` / `version`.
 
 ## Status — honest about limits
 
-**Alpha.** Real, tested, and safe to try — not yet production-hardened.
+**Beta.** The full feature surface is built and tested end-to-end — review it before trusting it with regulated data.
 
-- ✅ Built: M0 foundations · M1 data + policy spine · M2 auth · M3 agent layer · M4 MCP/CLI · M5 Postgres engine.
+- ✅ Built: M0 foundations · M1 data + policy spine · M2 auth · M3 agent layer · M4 MCP/CLI · M5 Postgres · M6 storage · M7 functions · M8 realtime · M9 dashboard · M10 hardening.
 - 🧪 Quality gates: `go test -race`, `go vet`, `staticcheck`, `govulncheck` — all green. Postgres parity proven in CI.
 - 🔬 Reviewed: spec-reviewed per milestone, plus repeated back-to-back adversarial review rounds.
-- 🚧 Not built yet: file storage, edge functions, realtime, and the web dashboard (designed, not implemented).
-- ⚠️ The policy engine is the crown jewel and warrants an **independent security audit** before you store real/regulated data.
+- 🔒 Hardened: deny-by-default everywhere, per-IP rate limiting, CSP + security headers, non-root distroless image, three-tier [deploy guide](DEPLOY.md).
+- ⚠️ Honest caveats: the policy engine warrants an **independent security audit** before regulated data; realtime SSE is per-node (a shared-bus adapter for cross-node fan-out is the next step); the WASM memory cap is process-wide, not per-function; S3 and Postgres are CI-verified, not yet battle-tested under production load.
 
 ## Development
 

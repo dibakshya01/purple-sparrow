@@ -68,6 +68,12 @@ type Config struct {
 	// --- Functions (M7) ---
 	// FnMaxMemoryMB caps the WASM runtime's linear memory (default 128).
 	FnMaxMemoryMB int
+
+	// --- Hardening (M10) ---
+	// RateLimitRPS is the per-client-IP request rate (0 disables; default 100).
+	RateLimitRPS int
+	// RateLimitBurst is the per-client-IP burst allowance (default 200).
+	RateLimitBurst int
 }
 
 // StoragePath returns the local blob root within the data dir.
@@ -93,6 +99,8 @@ func Defaults() Config {
 		StorageBackend:        "local",
 		StorageMaxObjectBytes: 100 << 20, // 100 MiB
 		FnMaxMemoryMB:         128,
+		RateLimitRPS:          100,
+		RateLimitBurst:        200,
 	}
 }
 
@@ -160,6 +168,20 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("PS_FN_MAX_MEMORY_MB %q is invalid; use a positive integer (MiB)", v)
 		}
 		c.FnMaxMemoryMB = n
+	}
+	if v := env("PS_RATE_LIMIT_RPS"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			return c, fmt.Errorf("PS_RATE_LIMIT_RPS %q is invalid; use a non-negative integer (0 disables)", v)
+		}
+		c.RateLimitRPS = n
+	}
+	if v := env("PS_RATE_LIMIT_BURST"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			return c, fmt.Errorf("PS_RATE_LIMIT_BURST %q is invalid; use a positive integer", v)
+		}
+		c.RateLimitBurst = n
 	}
 
 	return c, c.Validate()

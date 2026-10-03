@@ -50,16 +50,20 @@ type Deps struct {
 
 // Server owns the HTTP handler and its request-scoped dependencies.
 type Server struct {
-	cfg    config.Config
-	logger *slog.Logger
-	deps   Deps
-	ready  atomic.Bool
-	router http.Handler
+	cfg     config.Config
+	logger  *slog.Logger
+	deps    Deps
+	ready   atomic.Bool
+	router  http.Handler
+	limiter *rateLimiter
 }
 
 // New constructs a Server and builds its router.
 func New(cfg config.Config, logger *slog.Logger, deps Deps) *Server {
 	s := &Server{cfg: cfg, logger: logger, deps: deps}
+	if cfg.RateLimitRPS > 0 {
+		s.limiter = newRateLimiter(cfg.RateLimitRPS, cfg.RateLimitBurst)
+	}
 	s.router = s.buildRouter()
 	return s
 }
@@ -79,6 +83,9 @@ func (s *Server) buildRouter() http.Handler {
 	r.Use(reqid.Middleware)
 	r.Use(recoverer(s.logger))
 	r.Use(accessLog(s.logger))
+	if s.limiter != nil {
+		r.Use(rateLimit(s.limiter))
+	}
 	r.Use(securityHeaders)
 
 	r.NotFound(func(w http.ResponseWriter, req *http.Request) {

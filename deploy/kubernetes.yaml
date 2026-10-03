@@ -1,0 +1,58 @@
+# Purple Sparrow — minimal Kubernetes example (startup/enterprise tier).
+# Uses Postgres + S3 so the pod is stateless and can scale horizontally.
+# Create the secret first:
+#   kubectl create secret generic purple-sparrow \
+#     --from-literal=PS_ADMIN_API_KEY=ps_sk_... \
+#     --from-literal=PS_DATABASE_URL=postgres://user:pass@host:5432/db \
+#     --from-literal=PS_S3_ACCESS_KEY_ID=... \
+#     --from-literal=PS_S3_SECRET_ACCESS_KEY=...
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: purple-sparrow
+  labels: { app: purple-sparrow }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: purple-sparrow } }
+  template:
+    metadata:
+      labels: { app: purple-sparrow }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+        - name: purple-sparrow
+          image: ghcr.io/dibakshya01/purple-sparrow:latest
+          args: ["serve"]
+          ports: [{ containerPort: 8787 }]
+          env:
+            - { name: PS_ADDR, value: "0.0.0.0:8787" }
+            - { name: PS_TIER, value: "startup" }
+            - { name: PS_STORAGE_BACKEND, value: "s3" }
+            - { name: PS_S3_ENDPOINT, value: "https://s3.us-east-1.amazonaws.com" }
+            - { name: PS_S3_REGION, value: "us-east-1" }
+            - { name: PS_S3_BUCKET, value: "my-ps-objects" }
+          envFrom:
+            - secretRef: { name: purple-sparrow }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8787 }
+            initialDelaySeconds: 2
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8787 }
+            initialDelaySeconds: 5
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "1", memory: "512Mi" }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: purple-sparrow
+spec:
+  selector: { app: purple-sparrow }
+  ports: [{ port: 80, targetPort: 8787 }]

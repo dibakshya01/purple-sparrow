@@ -143,8 +143,12 @@ GET /meta  <span class="c">→ tables · columns · policies</span></pre>
         <div class="grid reveal">
           <div class="card"><h3>Data + policy</h3><p>User tables, records CRUD, PostgREST-style filters — every read row-filtered, every write checked.</p></div>
           <div class="card"><h3>Auth</h3><p>Email/password, RS256 JWTs published via JWKS, single-use refresh rotation, hashed API keys.</p></div>
+          <div class="card"><h3>Storage</h3><p>Buckets &amp; objects with ownership-scoped access, public buckets, and presigned URLs — local filesystem or S3.</p></div>
+          <div class="card"><h3>Functions</h3><p>Edge functions as sandboxed WASM (WASI/wazero): no fs, net, or subprocess; explicit secrets; timeout &amp; memory caps.</p></div>
+          <div class="card"><h3>Realtime</h3><p>Row-change events over SSE, filtered per subscriber by the policy engine — you only see what you may read.</p></div>
           <div class="card"><h3>Agent layer</h3><p>Docs-over-API, per-agent memory, and an advisor that flags risky configuration.</p></div>
-          <div class="card"><h3>MCP + CLI</h3><p>The whole surface as agent tools, plus <code>serve</code> / <code>mcp</code> / <code>mcp-config</code>.</p></div>
+          <div class="card"><h3>Dashboard + MCP</h3><p>A dependency-free admin console in the binary, plus <code>serve</code> / <code>mcp</code> / <code>mcp-config</code> for agents.</p></div>
+          <div class="card"><h3>One binary, three tiers</h3><p>SQLite + local FS solo; Postgres + S3 at scale — switch with env vars, not a rebuild.</p></div>
         </div>
       </div>
     </section>

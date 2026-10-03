@@ -84,13 +84,25 @@ func accessLog(logger *slog.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-// securityHeaders sets conservative baseline headers on every response.
+// securityHeaders sets conservative baseline headers on every response (M10
+// hardens these). The CSP permits 'unsafe-inline' because the embedded dashboard
+// is a single self-contained document; everything else is locked to same-origin.
+// HSTS is sent only when the request arrived over TLS (directly or via a trusted
+// proxy), so local HTTP development is never pinned to HTTPS.
 func securityHeaders(next http.Handler) http.Handler {
+	const csp = "default-src 'self'; base-uri 'self'; img-src 'self' data:; " +
+		"style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; " +
+		"connect-src 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
 		h.Set("X-Content-Type-Options", "nosniff")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "no-referrer")
+		h.Set("Content-Security-Policy", csp)
+		h.Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+			h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
