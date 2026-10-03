@@ -110,6 +110,47 @@ func (e *Enforcer) Check(ctx context.Context, q data.Querier, p principal.Princi
 	return asInt(res["ok"]) == 1, nil
 }
 
+// Visible reports whether p may SELECT the given row under the table's select
+// policies. M8 realtime uses it to filter change events per subscriber, so a
+// client only receives events for rows it is authorized to read. Admin always;
+// otherwise deny-by-default — a matching select policy's USING expression must
+// accept the row.
+func (e *Enforcer) Visible(ctx context.Context, q data.Querier, p principal.Principal, table string, allowedCols []string, row map[string]any) (bool, error) {
+	if p.IsAdmin() {
+		return true, nil
+	}
+	pols, err := e.matching(ctx, q, table, ActionSelect, p)
+	if err != nil {
+		return false, err
+	}
+	if len(pols) == 0 {
+		return false, nil
+	}
+	allow := toSet(allowedCols)
+	var frags []string
+	var args []any
+	for _, pol := range pols {
+		if pol.Using == "" {
+			continue
+		}
+		f, a, cErr := compileCheckExpr(pol.Using, e.eng.Dialect(), allow, p, row)
+		if cErr != nil {
+			return false, cErr
+		}
+		frags = append(frags, f)
+		args = append(args, a...)
+	}
+	if len(frags) == 0 {
+		return false, nil
+	}
+	sql := "SELECT CASE WHEN (" + strings.Join(frags, " OR ") + ") THEN 1 ELSE 0 END AS ok"
+	res, err := q.QueryRowCtx(ctx, sql, args...)
+	if err != nil {
+		return false, err
+	}
+	return asInt(res["ok"]) == 1, nil
+}
+
 func asInt(v any) int64 {
 	switch n := v.(type) {
 	case int64:

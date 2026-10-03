@@ -53,6 +53,18 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 	return s.ResponseWriter.Write(b)
 }
 
+// Flush delegates to the underlying ResponseWriter so streaming endpoints (SSE)
+// keep working through this wrapper. No-op if the base writer isn't a Flusher.
+func (s *statusRecorder) Flush() {
+	if f, ok := s.ResponseWriter.(http.Flusher); ok {
+		if !s.wrote {
+			s.status = http.StatusOK
+			s.wrote = true
+		}
+		f.Flush()
+	}
+}
+
 // accessLog emits a structured line per request with method, path, status, and
 // duration, tagged with the request id.
 func accessLog(logger *slog.Logger) func(http.Handler) http.Handler {

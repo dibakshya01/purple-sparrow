@@ -25,6 +25,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/config"
 	"github.com/dibakshya01/purple-sparrow/internal/data"
 	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
+	"github.com/dibakshya01/purple-sparrow/internal/events"
 	"github.com/dibakshya01/purple-sparrow/internal/functions"
 	"github.com/dibakshya01/purple-sparrow/internal/httpapi"
 	"github.com/dibakshya01/purple-sparrow/internal/idgen"
@@ -166,6 +167,11 @@ func run() error {
 	rec := records.New(eng, cat, enf)
 	mta := meta.New(eng, cat, pol)
 
+	// Realtime (M8): record mutations publish to the in-process event hub; the
+	// /v1/realtime SSE endpoint fans them out, policy-filtered per subscriber.
+	bus := events.NewHub()
+	rec.SetPublisher(bus)
+
 	authSvc, err := auth.NewService(context.Background(), eng)
 	if err != nil {
 		return err
@@ -235,6 +241,9 @@ func run() error {
 		Advisor:   advisor.New(cat, pol),
 		Storage:   storageSvc,
 		Functions: fnSvc,
+		Bus:       bus,
+		Enforcer:  enf,
+		Engine:    eng,
 	})
 	httpServer := &http.Server{
 		Addr:    cfg.Addr,

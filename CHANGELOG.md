@@ -31,6 +31,10 @@ SemVer from the first tagged release.
   `wazero` sandbox — no filesystem, network, subprocess, or host env; stdin/stdout
   request/response; explicit secret injection; per-call timeout and memory cap;
   deny-by-default invocation by role. Pure-Go, no CGO.
+- **M8 — Realtime.** An `EventBus` port with an in-process hub; record mutations
+  publish change events delivered over SSE (`GET /v1/realtime`), **filtered per
+  subscriber by the policy engine** so a client only receives row changes it is
+  authorized to read.
 - Launch website (GitHub Pages) and README deck.
 
 ### Security

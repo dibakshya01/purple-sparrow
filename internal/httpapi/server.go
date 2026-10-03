@@ -18,6 +18,8 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/auth"
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/events"
 	"github.com/dibakshya01/purple-sparrow/internal/functions"
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
 	"github.com/dibakshya01/purple-sparrow/internal/records"
@@ -39,6 +41,11 @@ type Deps struct {
 	Advisor   *advisor.Service
 	Storage   *storage.Service
 	Functions *functions.Service
+	// Realtime (M8): Bus delivers change events; Enforcer + Engine filter them per
+	// subscriber. All three must be set for the /v1/realtime route to mount.
+	Bus      events.Bus
+	Enforcer *policy.Enforcer
+	Engine   data.Engine
 }
 
 // Server owns the HTTP handler and its request-scoped dependencies.
@@ -106,6 +113,9 @@ func (s *Server) buildRouter() http.Handler {
 			}
 			if s.deps.Functions != nil {
 				s.mountFunctionRoutes(g)
+			}
+			if s.deps.Bus != nil && s.deps.Enforcer != nil && s.deps.Engine != nil {
+				g.Get("/v1/realtime", s.handleRealtime)
 			}
 		})
 	}

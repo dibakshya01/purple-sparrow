@@ -16,6 +16,7 @@ import (
 
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/data"
+	"github.com/dibakshya01/purple-sparrow/internal/events"
 	"github.com/dibakshya01/purple-sparrow/internal/idgen"
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
 	"github.com/dibakshya01/purple-sparrow/internal/principal"
@@ -45,11 +46,24 @@ type Service struct {
 	eng data.Engine
 	cat *catalog.Service
 	enf *policy.Enforcer
+	pub events.Publisher // optional; nil = no realtime emission
 }
 
 // New returns a records Service.
 func New(eng data.Engine, cat *catalog.Service, enf *policy.Enforcer) *Service {
 	return &Service{eng: eng, cat: cat, enf: enf}
+}
+
+// SetPublisher wires a realtime event publisher (M8). Safe to leave unset.
+func (s *Service) SetPublisher(p events.Publisher) { s.pub = p }
+
+// emit publishes a change event if a publisher is wired. Emission is best-effort
+// and must never affect the mutation's result.
+func (s *Service) emit(kind, table, id string, row data.Row) {
+	if s.pub == nil {
+		return
+	}
+	s.pub.Publish(events.Event{Type: kind, Table: table, ID: id, Row: row, At: idgen.NowRFC3339()})
 }
 
 // Filter is a parsed query filter (col op value).
@@ -363,6 +377,8 @@ func (s *Service) InsertMany(ctx context.Context, p principal.Principal, table s
 	for _, pr := range prep {
 		normalizeRow(pr.row, tc.types)
 		out = append(out, pr.row)
+		id, _ := pr.row["id"].(string)
+		s.emit(events.KindInsert, table, id, pr.row)
 	}
 	return out, nil
 }
@@ -468,6 +484,7 @@ func (s *Service) Update(ctx context.Context, p principal.Principal, table, id s
 	}
 
 	normalizeRow(result, tc.types)
+	s.emit(events.KindUpdate, table, id, result)
 	return result, nil
 }
 
@@ -491,6 +508,15 @@ func (s *Service) Delete(ctx context.Context, p principal.Principal, table, id s
 		where += " AND " + frag
 		args = append(args, pArgs...)
 	}
+	// Capture the row before deleting (within the same policy scope) so the realtime
+	// delete event can be filtered per subscriber. Only when a publisher is wired.
+	var deletedRow data.Row
+	if s.pub != nil {
+		if row, rerr := s.eng.QueryRowCtx(ctx, "SELECT * FROM "+d.QuoteIdent(table)+" WHERE "+where, args...); rerr == nil {
+			normalizeRow(row, tc.types)
+			deletedRow = row
+		}
+	}
 	n, err := s.eng.ExecCtx(ctx, "DELETE FROM "+d.QuoteIdent(table)+" WHERE "+where, args...)
 	if err != nil {
 		return err
@@ -498,6 +524,7 @@ func (s *Service) Delete(ctx context.Context, p principal.Principal, table, id s
 	if n == 0 {
 		return ErrRecordNotFound
 	}
+	s.emit(events.KindDelete, table, id, deletedRow)
 	return nil
 }
 
