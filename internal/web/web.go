@@ -1,6 +1,7 @@
-// Package web embeds the static dashboard assets into the binary so releases are
-// self-contained. In M0 this is a placeholder page; a later milestone replaces
-// the static directory with the built React SPA.
+// Package web embeds the admin dashboard into the binary so releases are
+// self-contained. The dashboard (M9) is a dependency-free single-page app
+// (static/index.html, no build step) that talks only to the public API with an
+// admin key — keeping the single static binary with no Node/CDN requirement.
 package web
 
 import (
@@ -26,7 +27,7 @@ func AssetHandler() http.Handler {
 	return http.FileServer(http.FS(sub))
 }
 
-// Index serves the root placeholder document only. Mounting this at exactly "/"
+// Index serves the dashboard document at the root. Mounting this at exactly "/"
 // keeps every other unmatched path flowing to the router's NotFound handler.
 func Index() http.Handler {
 	b, err := assets.ReadFile("static/index.html")

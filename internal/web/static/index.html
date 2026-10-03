@@ -1,28 +1,349 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Purple Sparrow</title>
-    <style>
-      :root { color-scheme: light dark; }
-      body {
-        margin: 0; min-height: 100vh; display: grid; place-items: center;
-        font: 16px/1.5 ui-sans-serif, system-ui, sans-serif;
-        background: #0b0b12; color: #e8e6f0;
-      }
-      .card { text-align: center; padding: 2rem; }
-      h1 { margin: 0 0 .25rem; font-size: 1.6rem; letter-spacing: -0.01em; }
-      .dot { color: #a78bfa; }
-      p { margin: .25rem 0; opacity: .8; }
-      code { background: #1a1a2e; padding: .15rem .4rem; border-radius: 6px; }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <h1>Purple Sparrow <span class="dot">●</span></h1>
-      <p>Agent-native backend is running.</p>
-      <p>Dashboard coming in a later milestone. Try <code>GET /v1</code> or <code>GET /healthz</code>.</p>
-    </div>
-  </body>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Purple Sparrow — Dashboard</title>
+<style>
+  :root{
+    --bg:#0b0a12; --bg-2:#110f1b; --surface:#15131f; --surface-2:#1a1727;
+    --border:#272340; --text:#ecebf7; --muted:#a7a2c6; --accent:#8e79ff;
+    --accent-2:#6d4aff; --good:#2fc878; --warn:#ffb020; --bad:#ff6a5a;
+    --radius:12px; --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  code,pre,.mono{font-family:var(--mono)}
+  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+  /* Sidebar */
+  .side{background:var(--bg-2);border-right:1px solid var(--border);padding:1.1rem .8rem;display:flex;flex-direction:column;gap:.15rem}
+  .brand{display:flex;align-items:center;gap:.5rem;font-weight:700;letter-spacing:-.02em;padding:.3rem .5rem 1rem}
+  .brand svg{width:26px;height:26px}
+  .brand .p{color:var(--accent)}
+  .nav a{display:flex;align-items:center;gap:.6rem;color:var(--muted);padding:.5rem .6rem;border-radius:9px;font-size:.92rem;font-weight:500;cursor:pointer}
+  .nav a:hover{background:var(--surface);color:var(--text);text-decoration:none}
+  .nav a.on{background:var(--surface-2);color:var(--text)}
+  .nav a .ic{width:17px;height:17px;flex:none;opacity:.85}
+  .side .spacer{flex:1}
+  .side .status{font-size:.74rem;color:var(--muted);padding:.5rem;border-top:1px solid var(--border);margin-top:.5rem}
+  .side .status b{color:var(--good)}
+  /* Main */
+  .main{padding:1.6rem 2rem;max-width:1100px;overflow-x:auto}
+  h1{font-size:1.5rem;letter-spacing:-.02em;margin:0 0 .2rem}
+  h2{font-size:1.05rem;letter-spacing:-.01em;margin:1.6rem 0 .6rem;color:var(--text)}
+  .sub{color:var(--muted);margin:.1rem 0 1rem;font-size:.92rem}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin:1rem 0}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem}
+  .stat .n{font-size:1.7rem;font-weight:700;letter-spacing:-.02em}
+  .stat .l{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;margin:.4rem 0}
+  th,td{text-align:left;padding:.55rem .6rem;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+  td.mono,th.mono{font-family:var(--mono);font-size:.82rem}
+  tr.click{cursor:pointer} tr.click:hover td{background:var(--surface)}
+  .pill{display:inline-block;font-family:var(--mono);font-size:.7rem;padding:.12rem .5rem;border-radius:100px;border:1px solid var(--border);color:var(--muted)}
+  .pill.ok{color:var(--good);border-color:rgba(47,200,120,.4);background:rgba(47,200,120,.1)}
+  .pill.no{color:var(--muted)}
+  .pill.role{color:var(--accent);border-color:rgba(142,121,255,.4);background:rgba(142,121,255,.1)}
+  .btn{display:inline-flex;align-items:center;gap:.4rem;background:var(--accent-2);color:#fff;border:none;border-radius:9px;padding:.5rem .9rem;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn:hover{background:var(--accent)}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn.ghost:hover{border-color:var(--accent)}
+  .btn.sm{padding:.3rem .6rem;font-size:.8rem}
+  input,select,textarea{background:var(--bg-2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:.55rem .7rem;font-size:.9rem;font-family:inherit;width:100%}
+  input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  label{display:block;font-size:.8rem;color:var(--muted);margin:.8rem 0 .3rem}
+  .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+  pre{background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;overflow-x:auto;font-size:.82rem;line-height:1.5;margin:.5rem 0}
+  .empty{color:var(--muted);padding:1.5rem;text-align:center;border:1px dashed var(--border);border-radius:var(--radius)}
+  .err{color:var(--bad);background:rgba(255,106,90,.08);border:1px solid rgba(255,106,90,.3);border-radius:9px;padding:.6rem .8rem;font-size:.86rem;margin:.6rem 0}
+  .connect{max-width:420px;margin:12vh auto;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem}
+  .connect h1{text-align:center}
+  .connect .sub{text-align:center}
+  .crumb{color:var(--muted);font-size:.85rem;margin-bottom:.3rem}
+  .crumb a{cursor:pointer}
+  .tail{background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:.5rem;height:420px;overflow-y:auto;font-family:var(--mono);font-size:.8rem}
+  .tail .ev{padding:.35rem .5rem;border-bottom:1px solid var(--border)}
+  .tail .ev .t{color:var(--accent)}
+  .tail .ev.delete .t{color:var(--bad)} .tail .ev.update .t{color:var(--warn)} .tail .ev.insert .t{color:var(--good)}
+  .muted{color:var(--muted)} .right{margin-left:auto}
+  @media(max-width:720px){.app{grid-template-columns:1fr}.side{flex-direction:row;overflow-x:auto;position:sticky;top:0;z-index:10}.side .spacer,.side .status{display:none}.nav{display:flex}.brand{padding:.3rem .5rem}.main{padding:1rem}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const SVG_BIRD = '<svg viewBox="0 0 32 32" width="1em" height="1em" style="color:var(--accent);vertical-align:-0.14em" aria-hidden="true"><path d="M9.5 20.5 L3.5 25.5 L11 23.2 Z" fill="currentColor" opacity=".55"/><path d="M7.2 22.2 C 8.4 17.5, 9.2 14.2, 12 11.6 C 14.4 9.3, 18 8.6, 20.6 9.2 L 25.5 8.2 L 21.6 11.2 C 22.4 13.8, 21.8 17.2, 19.4 19.4 C 16.4 22.1, 11 22.9, 7.2 22.2 Z" fill="currentColor"/><path d="M12.6 15.2 C 15 13.6, 17.8 13.9, 19.6 15.4 C 17.2 17.1, 14.4 17.2, 12.6 15.2 Z" fill="var(--bg)"/><circle cx="18.7" cy="12.2" r="1.05" fill="var(--bg)"/></svg>';
+
+const S = {
+  base: location.origin,
+  key: sessionStorage.getItem('ps_key') || '',
+  info: null,
+};
+
+// --- tiny helpers ---
+const el = (s) => document.querySelector(s);
+const esc = (s) => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function h(tag, attrs, ...kids){ const e=document.createElement(tag); for(const k in (attrs||{})){ if(k==='class')e.className=attrs[k]; else if(k==='html')e.innerHTML=attrs[k]; else if(k.startsWith('on'))e.addEventListener(k.slice(2),attrs[k]); else e.setAttribute(k,attrs[k]); } for(const kid of kids){ if(kid==null)continue; e.append(kid.nodeType?kid:document.createTextNode(kid)); } return e; }
+
+async function api(path, opts={}){
+  const headers = Object.assign({}, opts.headers||{});
+  if(S.key) headers['Authorization'] = 'Bearer '+S.key;
+  if(opts.body && !headers['Content-Type']) headers['Content-Type']='application/json';
+  const res = await fetch(S.base+path, {method:opts.method||'GET', headers, body:opts.body});
+  const text = await res.text();
+  let data = null; try{ data = text?JSON.parse(text):null; }catch(_){ data = text; }
+  if(!res.ok){ const e = new Error((data&&data.error&&data.error.message)||('HTTP '+res.status)); e.detail=data&&data.error; e.status=res.status; throw e; }
+  return data;
+}
+
+// --- routing ---
+const routes = {};
+function route(name, fn){ routes[name]=fn; }
+function go(hash){ location.hash = hash; }
+function current(){ return (location.hash||'#/overview').slice(2); }
+
+window.addEventListener('hashchange', render);
+window.addEventListener('load', render);
+
+function render(){
+  if(!S.key){ return renderConnect(); }
+  const path = current().split('/');
+  const view = path[0]||'overview';
+  el('#root').innerHTML='';
+  el('#root').append(shell(view));
+  const main = el('#main');
+  const fn = routes[view] || routes['overview'];
+  Promise.resolve().then(()=>fn(main, path.slice(1))).catch(e=>{
+    if(e.status===401||e.status===403){ main.append(h('div',{class:'err'}, 'Auth failed — your key may be wrong or lack project_admin. ')); }
+    main.append(h('div',{class:'err'}, e.message));
+  });
+}
+
+function shell(active){
+  const nav = [
+    ['overview','Overview','M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z'],
+    ['tables','Tables','M3 5h18M3 12h18M3 19h18'],
+    ['storage','Storage','M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7'],
+    ['functions','Functions','M4 7h16M4 12h10M4 17h7'],
+    ['advisor','Advisor','M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z'],
+    ['realtime','Realtime','M3 12h4l3 8 4-16 3 8h4'],
+    ['connect','Connect & MCP','M8 7V5a4 4 0 118 0v2M5 7h14v13H5z'],
+  ];
+  const side = h('div',{class:'side'},
+    h('div',{class:'brand',html:SVG_BIRD+' <span><span class="p">Purple</span> Sparrow</span>'}),
+    h('div',{class:'nav'}, ...nav.map(([k,label,d])=> h('a',{class:(k===active?'on':''),onclick:()=>go('#/'+k)},
+      h('span',{class:'ic',html:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="${d}"/></svg>`}), label))),
+    h('div',{class:'spacer'}),
+    h('div',{class:'status',html: S.info ? `connected · <b>${esc(S.info.engine||'ok')}</b><br>${esc(S.info.version||'')}` : 'connecting…'}),
+    h('div',{class:'nav'}, h('a',{onclick:disconnect}, 'Sign out')),
+  );
+  const main = h('div',{class:'main',id:'main'});
+  return h('div',{class:'app'}, side, main);
+}
+
+function disconnect(){ S.key=''; sessionStorage.removeItem('ps_key'); S.info=null; render(); }
+
+// --- Connect screen ---
+function renderConnect(){
+  el('#root').innerHTML='';
+  const card = h('div',{class:'connect'},
+    h('h1',{html:SVG_BIRD+' Purple Sparrow'}),
+    h('div',{class:'sub'},'Sign in with a project admin API key to manage this backend.'),
+    h('label',{},'Server URL'),
+    h('input',{id:'c-base',value:S.base}),
+    h('label',{},'Admin API key'),
+    h('input',{id:'c-key',type:'password',placeholder:'ps_sk_…'}),
+    h('div',{id:'c-err'}),
+    h('div',{style:'margin-top:1.2rem'}, h('button',{class:'btn',style:'width:100%;justify-content:center',onclick:doConnect},'Connect')),
+  );
+  el('#root').append(card);
+  el('#c-key').addEventListener('keydown', e=>{ if(e.key==='Enter') doConnect(); });
+}
+async function doConnect(){
+  S.base = el('#c-base').value.trim().replace(/\/$/,'') || location.origin;
+  S.key = el('#c-key').value.trim();
+  el('#c-err').innerHTML='';
+  try{
+    S.info = await api('/meta');            // admin-only → validates the key
+    sessionStorage.setItem('ps_key', S.key);
+    go('#/overview'); render();
+  }catch(e){
+    S.key='';
+    el('#c-err').append(h('div',{class:'err'}, e.status===403?'That key is not a project_admin key.':('Could not connect: '+e.message)));
+  }
+}
+
+// --- Overview ---
+route('overview', async (main)=>{
+  const meta = S.info || await api('/meta'); S.info = meta;
+  const counts = meta.counts||{};
+  const t = meta.tables||[];
+  const policies = t.reduce((a,tb)=>a+((tb.policies||[]).length),0) || counts.policies || 0;
+  main.append(h('h1',{},'Overview'), h('div',{class:'sub'},'Engine '+esc(meta.engine)+' · version '+esc(meta.version)));
+  main.append(h('div',{class:'cards'},
+    stat(t.length,'tables'),
+    stat(policies,'policies'),
+    stat(esc(meta.engine),'engine'),
+  ));
+  main.append(h('h2',{},'Tables'));
+  if(!t.length){ main.append(h('div',{class:'empty'},'No tables yet. Create one with POST /v1/tables.')); return; }
+  const tbl = h('table',{}, h('thead',{},h('tr',{},h('th',{},'Name'),h('th',{},'Columns'),h('th',{},'Policies'))));
+  const body = h('tbody',{});
+  for(const tb of t){
+    body.append(h('tr',{class:'click',onclick:()=>go('#/tables/'+tb.name)},
+      h('td',{class:'mono'},tb.name),
+      h('td',{class:'muted'},(tb.columns||[]).map(c=>c.name).join(', ')),
+      h('td',{class:'mono'},String((tb.policies||[]).length))));
+  }
+  tbl.append(body); main.append(tbl);
+});
+function stat(n,l){ return h('div',{class:'stat'}, h('div',{class:'n'},String(n)), h('div',{class:'l'},l)); }
+
+// --- Tables ---
+route('tables', async (main, args)=>{
+  if(args.length){ return renderTable(main, args[0]); }
+  const meta = await api('/meta'); S.info=meta;
+  main.append(h('h1',{},'Tables'), h('div',{class:'sub'},'Click a table to inspect columns, policies, and records.'));
+  const t = meta.tables||[];
+  if(!t.length){ main.append(h('div',{class:'empty'},'No tables yet.')); return; }
+  const tbl=h('table',{},h('thead',{},h('tr',{},h('th',{},'Name'),h('th',{},'Columns'))));
+  const body=h('tbody',{});
+  for(const tb of t) body.append(h('tr',{class:'click',onclick:()=>go('#/tables/'+tb.name)},h('td',{class:'mono'},tb.name),h('td',{class:'muted'},(tb.columns||[]).map(c=>c.name+':'+c.type).join(', '))));
+  tbl.append(body); main.append(tbl);
+});
+
+async function renderTable(main, name){
+  const info = await api('/v1/tables/'+encodeURIComponent(name));
+  main.append(h('div',{class:'crumb'}, h('a',{onclick:()=>go('#/tables')},'Tables'), ' / '+esc(name)));
+  main.append(h('h1',{},esc(name)));
+  main.append(h('h2',{},'Columns'));
+  const ct=h('table',{},h('thead',{},h('tr',{},h('th',{},'Name'),h('th',{},'Type'),h('th',{},'Nullable'))));
+  const cb=h('tbody',{});
+  for(const c of info.columns||[]) cb.append(h('tr',{},h('td',{class:'mono'},c.name),h('td',{class:'mono'},c.type),h('td',{},c.nullable?'yes':'no')));
+  ct.append(cb); main.append(ct);
+
+  main.append(h('h2',{},'Policies'));
+  const pols = info.policies||[];
+  if(!pols.length){ main.append(h('div',{class:'empty'},'No policies — this table is deny-by-default (admin only).')); }
+  else{
+    const pt=h('table',{},h('thead',{},h('tr',{},h('th',{},'Action'),h('th',{},'Roles'),h('th',{},'Using'),h('th',{},'Check'))));
+    const pb=h('tbody',{});
+    for(const p of pols) pb.append(h('tr',{},h('td',{},h('span',{class:'pill role'},p.action)),h('td',{},(p.roles||[]).join(', ')),h('td',{class:'mono'},p.using||'—'),h('td',{class:'mono'},p.check||'—')));
+    pt.append(pb); main.append(pt);
+  }
+
+  main.append(h('h2',{},'Records'));
+  const recWrap=h('div',{}); main.append(recWrap);
+  try{
+    const data = await api('/v1/tables/'+encodeURIComponent(name)+'/records?limit=25');
+    const rows = data.records||[];
+    if(!rows.length){ recWrap.append(h('div',{class:'empty'},'No rows visible to admin, or the table is empty.')); return; }
+    const cols = Object.keys(rows[0]);
+    const rt=h('table',{},h('thead',{},h('tr',{}, ...cols.map(c=>h('th',{class:'mono'},c)))));
+    const rb=h('tbody',{});
+    for(const r of rows) rb.append(h('tr',{}, ...cols.map(c=>h('td',{class:'mono'}, fmt(r[c])))));
+    rt.append(rb); recWrap.append(rt);
+    recWrap.append(h('div',{class:'muted',style:'font-size:.8rem;margin-top:.4rem'}, 'Showing up to 25 rows.'));
+  }catch(e){ recWrap.append(h('div',{class:'err'}, 'Could not load records: '+e.message)); }
+}
+function fmt(v){ if(v==null)return '—'; if(typeof v==='object')return JSON.stringify(v); const s=String(v); return s.length>60?s.slice(0,60)+'…':s; }
+
+// --- Storage ---
+route('storage', async (main, args)=>{
+  if(args.length){ return renderBucket(main, args[0]); }
+  main.append(h('h1',{},'Storage'), h('div',{class:'sub'},'Buckets hold objects (local filesystem or S3).'));
+  const data = await api('/v1/storage/buckets');
+  const bs = data.buckets||[];
+  if(!bs.length){ main.append(h('div',{class:'empty'},'No buckets. Create one with POST /v1/storage/buckets.')); return; }
+  const tbl=h('table',{},h('thead',{},h('tr',{},h('th',{},'Bucket'),h('th',{},'Visibility'),h('th',{},'Created'))));
+  const body=h('tbody',{});
+  for(const b of bs) body.append(h('tr',{class:'click',onclick:()=>go('#/storage/'+b.name)},h('td',{class:'mono'},b.name),h('td',{}, b.public?h('span',{class:'pill'},'public'):h('span',{class:'pill no'},'private')),h('td',{class:'muted'},esc(b.created_at||''))));
+  tbl.append(body); main.append(tbl);
+});
+async function renderBucket(main, name){
+  main.append(h('div',{class:'crumb'}, h('a',{onclick:()=>go('#/storage')},'Storage'), ' / '+esc(name)));
+  main.append(h('h1',{},esc(name)));
+  const data = await api('/v1/storage/'+encodeURIComponent(name));
+  const objs = data.objects||[];
+  if(!objs.length){ main.append(h('div',{class:'empty'},'No objects in this bucket.')); return; }
+  const tbl=h('table',{},h('thead',{},h('tr',{},h('th',{},'Key'),h('th',{},'Size'),h('th',{},'Type'),h('th',{},'Owner'))));
+  const body=h('tbody',{});
+  for(const o of objs) body.append(h('tr',{},h('td',{class:'mono'},o.key),h('td',{class:'mono'},bytes(o.size)),h('td',{class:'muted'},esc(o.content_type)),h('td',{class:'mono muted'},esc(o.owner_id||'—'))));
+  tbl.append(body); main.append(tbl);
+}
+function bytes(n){ n=+n; if(n<1024)return n+' B'; if(n<1048576)return (n/1024).toFixed(1)+' KB'; return (n/1048576).toFixed(1)+' MB'; }
+
+// --- Functions ---
+route('functions', async (main)=>{
+  main.append(h('h1',{},'Functions'), h('div',{class:'sub'},'Edge functions run as sandboxed WASM (WASI) modules.'));
+  const data = await api('/v1/functions');
+  const fns = data.functions||[];
+  if(!fns.length){ main.append(h('div',{class:'empty'},'No functions deployed. See /docs/functions.')); return; }
+  const tbl=h('table',{},h('thead',{},h('tr',{},h('th',{},'Slug'),h('th',{},'Runtime'),h('th',{},'Invoke roles'),h('th',{},'Code'),h('th',{},'Timeout'))));
+  const body=h('tbody',{});
+  for(const f of fns) body.append(h('tr',{},
+    h('td',{class:'mono'},f.slug),
+    h('td',{},h('span',{class:'pill'},f.runtime)),
+    h('td',{}, ...( (f.invoke_roles&&f.invoke_roles.length)?f.invoke_roles.map(r=>h('span',{class:'pill role'},r)):[h('span',{class:'pill no'},'admin-only')] )),
+    h('td',{}, f.has_code?h('span',{class:'pill ok'},'deployed'):h('span',{class:'pill no'},'no code')),
+    h('td',{class:'mono'}, (f.timeout_ms||0)+'ms')));
+  tbl.append(body); main.append(tbl);
+});
+
+// --- Advisor ---
+route('advisor', async (main)=>{
+  main.append(h('h1',{},'Advisor'), h('div',{class:'sub'},'An agent-facing linter for risky or missing configuration.'));
+  let data; try{ data = await api('/advisor'); }catch(e){ main.append(h('div',{class:'err'},'Advisor unavailable: '+e.message)); return; }
+  const findings = (data&&(data.findings||data.issues))||[];
+  if(!findings.length){ main.append(h('div',{class:'empty'},'No findings — configuration looks healthy.')); return; }
+  for(const f of findings){
+    main.append(h('div',{class:'stat',style:'margin:.6rem 0'},
+      h('div',{class:'row'}, h('span',{class:'pill '+(f.severity==='high'?'':'')},esc(f.severity||f.level||'note')), h('b',{},esc(f.title||f.code||'finding'))),
+      h('div',{class:'muted',style:'margin-top:.3rem'}, esc(f.message||f.detail||''))));
+  }
+});
+
+// --- Realtime (fetch-streamed SSE so we can send the auth header) ---
+let rtAbort=null;
+route('realtime', async (main)=>{
+  main.append(h('h1',{},'Realtime'), h('div',{class:'sub'},'Live change events, policy-filtered. Admin sees all tables.'));
+  const tail = h('div',{class:'tail',id:'tail'});
+  const btn = h('button',{class:'btn',onclick:toggleTail,id:'rt-btn'},'Start stream');
+  main.append(h('div',{class:'row',style:'margin:.4rem 0'}, btn, h('button',{class:'btn ghost sm',onclick:()=>el('#tail').innerHTML=''},'Clear')), tail);
+});
+async function toggleTail(){
+  const btn=el('#rt-btn');
+  if(rtAbort){ rtAbort.abort(); rtAbort=null; btn.textContent='Start stream'; return; }
+  btn.textContent='Stop stream';
+  rtAbort = new AbortController();
+  try{
+    const res = await fetch(S.base+'/v1/realtime', {headers:{'Authorization':'Bearer '+S.key}, signal:rtAbort.signal});
+    const reader = res.body.getReader(); const dec=new TextDecoder(); let buf='';
+    while(true){
+      const {value,done}=await reader.read(); if(done)break;
+      buf += dec.decode(value,{stream:true});
+      let i; while((i=buf.indexOf('\n\n'))>=0){ const chunk=buf.slice(0,i); buf=buf.slice(i+2); const line=chunk.split('\n').find(l=>l.startsWith('data: ')); if(line){ try{ pushEvent(JSON.parse(line.slice(6))); }catch(_){} } }
+    }
+  }catch(e){ if(e.name!=='AbortError' && el('#tail')) el('#tail').append(h('div',{class:'ev'},'stream ended: '+e.message)); }
+  if(el('#rt-btn')) el('#rt-btn').textContent='Start stream'; rtAbort=null;
+}
+function pushEvent(e){ const t=el('#tail'); if(!t)return; const row=h('div',{class:'ev '+e.type}, h('span',{class:'t'},e.type.toUpperCase()), ' ', h('span',{class:'mono'},e.table+' '+(e.id||'').slice(0,8)), ' ', h('span',{class:'muted'}, e.row?JSON.stringify(e.row).slice(0,80):'')); t.prepend(row); while(t.children.length>200)t.removeChild(t.lastChild); }
+
+// --- Connect & MCP ---
+route('connect', async (main)=>{
+  main.append(h('h1',{},'Connect an agent'), h('div',{class:'sub'},'Point a coding agent (Cursor, Claude, …) at this backend over MCP.'));
+  main.append(h('h2',{},'MCP client config'));
+  const cfg = {mcpServers:{"purple-sparrow":{command:"purplesparrow",args:["mcp"],env:{PS_API_URL:S.base,PS_API_KEY:"<your-api-key>"}}}};
+  main.append(h('pre',{}, JSON.stringify(cfg,null,2)));
+  main.append(h('div',{class:'sub'},'Or run the server\'s built-in helper: '), h('pre',{}, 'purplesparrow mcp-config'));
+  main.append(h('h2',{},'Docs over the API'));
+  main.append(h('div',{class:'sub'},'The backend serves its own docs so an agent can learn it: '), h('pre',{}, 'GET /docs\nGET /docs/getting-started\nGET /docs/policies'));
+  main.append(h('h2',{},'Session'));
+  main.append(h('div',{class:'row'}, h('span',{class:'muted'},'Signed in to '+esc(S.base)), h('button',{class:'btn ghost sm',onclick:disconnect},'Sign out')));
+});
+</script>
+</body>
 </html>

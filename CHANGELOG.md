@@ -35,6 +35,10 @@ SemVer from the first tagged release.
   publish change events delivered over SSE (`GET /v1/realtime`), **filtered per
   subscriber by the policy engine** so a client only receives row changes it is
   authorized to read.
+- **M9 — Dashboard.** A dependency-free admin console embedded in the binary
+  (served at `/`, no Node/build step): sign in with an admin key, browse tables
+  (columns, policies, records), storage buckets/objects, functions, the advisor,
+  a live realtime tail, and MCP onboarding. Talks only to the public API.
 - Launch website (GitHub Pages) and README deck.
 
 ### Security
