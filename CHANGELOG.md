@@ -23,6 +23,10 @@ SemVer from the first tagged release.
   `PS_DATABASE_URL`, with cross-engine parity (NULLS-LAST ordering, dialect-aware
   types and LIKE/locking, SQLSTATE constraint mapping) proven by a conformance
   suite against real Postgres in CI.
+- **M6 — Storage.** Object storage with a `BlobStore` port: a local-filesystem
+  adapter (solo tier) and an S3-compatible adapter (scale tiers, pure-Go SigV4, no
+  AWS SDK). Buckets + objects with deny-by-default, ownership-scoped access;
+  public buckets; HMAC presigned URLs; per-object size caps.
 - Launch website (GitHub Pages) and README deck.
 
 ### Security

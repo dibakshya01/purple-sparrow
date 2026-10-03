@@ -8,6 +8,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
 	"github.com/dibakshya01/purple-sparrow/internal/records"
+	"github.com/dibakshya01/purple-sparrow/internal/storage"
 )
 
 // mapDomainError translates a service-layer error into the agent error envelope.
@@ -70,6 +71,30 @@ func mapDomainError(err error) *apierr.Error {
 		return apierr.New(http.StatusBadRequest, "policy_invalid", err.Error(),
 			"action ∈ {select,insert,update,delete}; roles ⊆ {anon,authenticated,project_admin}; select/delete need `using`, insert needs `check`, update needs `using`.",
 			"/docs/policies")
+
+	case errors.Is(err, storage.ErrBucketNotFound):
+		return apierr.New(http.StatusNotFound, "bucket_not_found", "The bucket does not exist.",
+			"Create it with POST /v1/storage/buckets (admin), or list buckets with GET /v1/storage/buckets.",
+			"/docs/storage", "GET /v1/storage/buckets")
+	case errors.Is(err, storage.ErrBucketExists):
+		return apierr.New(http.StatusConflict, "bucket_exists", "A bucket with this name already exists.",
+			"Choose another name, or use the existing bucket.", "/docs/storage")
+	case errors.Is(err, storage.ErrObjectNotFound):
+		return apierr.New(http.StatusNotFound, "object_not_found", "No object matched (it may not exist or you may not have access).",
+			"Verify the bucket and key; GET /v1/storage/{bucket} lists objects you own.",
+			"/docs/storage")
+	case errors.Is(err, storage.ErrAnonWrite):
+		return apierr.New(http.StatusUnauthorized, "auth_required", "Uploading requires an authenticated identity.",
+			"Authenticate (sign in for a token, or present an API key); anonymous writes are not allowed.",
+			"/docs/auth")
+	case errors.Is(err, storage.ErrDenied):
+		return apierr.New(http.StatusForbidden, "storage_denied", "You do not have access to this object.",
+			"Objects are owner-scoped unless the bucket is public. Use the owner's credential, a presigned URL, or project_admin.",
+			"/docs/storage")
+	case errors.Is(err, storage.ErrInvalidName), errors.Is(err, storage.ErrInvalidKey):
+		return apierr.New(http.StatusBadRequest, "validation_failed", err.Error(),
+			"Bucket names are 2-63 lowercase alphanumeric chars (. _ - allowed). Object keys avoid '..' and empty segments.",
+			"/docs/storage")
 
 	default:
 		return apierr.Internal("").WithInternal(err)

@@ -19,6 +19,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/agent/memory"
 	"github.com/dibakshya01/purple-sparrow/internal/agent/meta"
 	"github.com/dibakshya01/purple-sparrow/internal/auth"
+	"github.com/dibakshya01/purple-sparrow/internal/blob"
 	"github.com/dibakshya01/purple-sparrow/internal/buildinfo"
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
@@ -30,6 +31,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/observability"
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
 	"github.com/dibakshya01/purple-sparrow/internal/records"
+	"github.com/dibakshya01/purple-sparrow/internal/storage"
 )
 
 func main() {
@@ -168,6 +170,32 @@ func run() error {
 		return err
 	}
 
+	// Storage (M6): object bytes in a BlobStore (local filesystem or S3), with
+	// metadata and ownership authorization over the data engine.
+	var store blob.Store
+	if cfg.StorageBackend == "s3" {
+		s3store, serr := blob.NewS3(blob.S3Config{
+			Endpoint: cfg.S3Endpoint, Region: cfg.S3Region, Bucket: cfg.S3Bucket,
+			AccessKey: cfg.S3AccessKey, SecretKey: cfg.S3SecretKey,
+		})
+		if serr != nil {
+			return serr
+		}
+		store = s3store
+		logger.Info("using s3 blob store", "bucket", cfg.S3Bucket)
+	} else {
+		local, lerr := blob.NewLocal(cfg.StoragePath())
+		if lerr != nil {
+			return lerr
+		}
+		store = local
+		logger.Info("using local blob store", "path", cfg.StoragePath())
+	}
+	storageSvc, err := storage.New(context.Background(), eng, store)
+	if err != nil {
+		return err
+	}
+
 	// Seed an admin API key. For the solo tier we generate an ephemeral one and log
 	// it (local-dev convenience). For any non-solo tier we refuse to boot without an
 	// explicit key rather than mint-and-log a live admin credential: a per-restart
@@ -195,6 +223,7 @@ func run() error {
 		Docs:    agentdocs.New(),
 		Memory:  memory.New(eng),
 		Advisor: advisor.New(cat, pol),
+		Storage: storageSvc,
 	})
 	httpServer := &http.Server{
 		Addr:    cfg.Addr,

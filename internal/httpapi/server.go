@@ -21,6 +21,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
 	"github.com/dibakshya01/purple-sparrow/internal/records"
 	"github.com/dibakshya01/purple-sparrow/internal/reqid"
+	"github.com/dibakshya01/purple-sparrow/internal/storage"
 	"github.com/dibakshya01/purple-sparrow/internal/web"
 )
 
@@ -35,6 +36,7 @@ type Deps struct {
 	Docs    *agentdocs.Service
 	Memory  *memory.Service
 	Advisor *advisor.Service
+	Storage *storage.Service
 }
 
 // Server owns the HTTP handler and its request-scoped dependencies.
@@ -97,6 +99,9 @@ func (s *Server) buildRouter() http.Handler {
 			s.mountDataRoutes(g)
 			s.mountAuthRoutes(g)
 			s.mountAgentRoutes(g)
+			if s.deps.Storage != nil {
+				s.mountStorageRoutes(g)
+			}
 		})
 	}
 
