@@ -59,7 +59,9 @@ func (s *stack) cols(t *testing.T) []string {
 	return out
 }
 
-func admin() principal.Principal { return principal.Principal{Roles: []string{principal.RoleProjectAdmin}} }
+func admin() principal.Principal {
+	return principal.Principal{Roles: []string{principal.RoleProjectAdmin}}
+}
 func user(id string) principal.Principal {
 	return principal.Principal{Roles: []string{principal.RoleAuthenticated}, Subject: id}
 }
@@ -116,7 +118,7 @@ func TestOwnerScopedSelect(t *testing.T) {
 	}
 }
 
-// AC-2b / Must-fix 2: anon (NULL uid) sees zero rows even when owner_id = ''.
+// AC-2b / Must-fix 2: anon (NULL uid) sees zero rows even when owner_id = ”.
 func TestAnonNullUidSeesNothing(t *testing.T) {
 	ctx := context.Background()
 	s := newStack(t)

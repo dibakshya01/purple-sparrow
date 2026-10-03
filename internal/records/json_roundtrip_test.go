@@ -17,11 +17,11 @@ func TestJSONColumnRoundTrip(t *testing.T) {
 	}
 
 	cases := map[string]any{
-		"str_true":  "true",                       // must stay the string "true"
-		"str_plain": "hello",                       // plain string
+		"str_true":  "true",                          // must stay the string "true"
+		"str_plain": "hello",                         // plain string
 		"object":    map[string]any{"a": float64(1)}, // object
-		"number":    float64(42),                   // number
-		"boolean":   true,                          // actual boolean
+		"number":    float64(42),                     // number
+		"boolean":   true,                            // actual boolean
 	}
 	ids := map[string]string{}
 	for name, val := range cases {

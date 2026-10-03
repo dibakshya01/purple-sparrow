@@ -28,14 +28,14 @@ const (
 
 // Sentinel errors mapped to envelope codes by the HTTP layer.
 var (
-	ErrPolicyDenied     = errors.New("policy denied")
-	ErrRecordNotFound   = errors.New("record not found")
-	ErrUnknownColumn    = errors.New("unknown column")
-	ErrReadOnlyColumn   = errors.New("read-only column")
-	ErrInvalidFilter    = errors.New("invalid filter")
-	ErrNoValues         = errors.New("no values provided")
-	ErrMissingRequired  = errors.New("missing required column")
-	ErrConstraint       = errors.New("constraint violation")
+	ErrPolicyDenied    = errors.New("policy denied")
+	ErrRecordNotFound  = errors.New("record not found")
+	ErrUnknownColumn   = errors.New("unknown column")
+	ErrReadOnlyColumn  = errors.New("read-only column")
+	ErrInvalidFilter   = errors.New("invalid filter")
+	ErrNoValues        = errors.New("no values provided")
+	ErrMissingRequired = errors.New("missing required column")
+	ErrConstraint      = errors.New("constraint violation")
 )
 
 var readOnlyColumns = map[string]bool{"id": true, "created_at": true}

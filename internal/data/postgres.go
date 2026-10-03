@@ -17,10 +17,10 @@ import (
 
 type postgresDialect struct{}
 
-func (postgresDialect) Name() string                        { return "postgres" }
-func (postgresDialect) Placeholder(n int) string            { return "$" + strconv.Itoa(n) }
-func (postgresDialect) LikeOperator() string                 { return "ILIKE" } // case-insensitive, matching SQLite LIKE
-func (postgresDialect) LockClause() string                   { return " FOR UPDATE" }
+func (postgresDialect) Name() string                          { return "postgres" }
+func (postgresDialect) Placeholder(n int) string              { return "$" + strconv.Itoa(n) }
+func (postgresDialect) LikeOperator() string                  { return "ILIKE" } // case-insensitive, matching SQLite LIKE
+func (postgresDialect) LockClause() string                    { return " FOR UPDATE" }
 func (postgresDialect) SQLType(logical string) (string, bool) { return ident.PostgresType(logical) }
 
 func (postgresDialect) QuoteIdent(name string) string {
@@ -55,9 +55,9 @@ func OpenPostgres(dsn string) (*Postgres, error) {
 	return &Postgres{db: db}, nil
 }
 
-func (p *Postgres) Dialect() Dialect              { return postgresDialect{} }
+func (p *Postgres) Dialect() Dialect               { return postgresDialect{} }
 func (p *Postgres) Ping(ctx context.Context) error { return p.db.PingContext(ctx) }
-func (p *Postgres) Close() error                  { return p.db.Close() }
+func (p *Postgres) Close() error                   { return p.db.Close() }
 
 func (p *Postgres) ExecCtx(ctx context.Context, q string, args ...any) (int64, error) {
 	rq, err := checkedRewrite(q, len(args))

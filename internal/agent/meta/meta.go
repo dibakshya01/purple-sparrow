@@ -34,10 +34,10 @@ type TableMeta struct {
 
 // Snapshot is the whole-backend introspection payload.
 type Snapshot struct {
-	Engine  string          `json:"engine"`
-	Version string          `json:"version"`
-	Tables  []TableMeta     `json:"tables"`
-	Counts  map[string]int  `json:"counts"`
+	Engine  string         `json:"engine"`
+	Version string         `json:"version"`
+	Tables  []TableMeta    `json:"tables"`
+	Counts  map[string]int `json:"counts"`
 }
 
 // Build assembles the snapshot.

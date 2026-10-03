@@ -69,8 +69,8 @@ func (s *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	p := principal.FromContext(r.Context())
 	writeJSON(w, r, http.StatusOK, map[string]any{
-		"subject": p.Subject,
-		"roles":   p.Roles,
+		"subject":  p.Subject,
+		"roles":    p.Roles,
 		"is_admin": p.IsAdmin(),
 	})
 }
