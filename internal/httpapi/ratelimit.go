@@ -24,6 +24,11 @@ type bucket struct {
 	last   time.Time
 }
 
+// maxBuckets bounds the map between janitor sweeps so an attacker rotating source
+// IPs (e.g. an IPv6 /64) cannot grow it without limit. When exceeded, idle
+// buckets are pruned inline; worst case the map is reset.
+const maxBuckets = 100_000
+
 func newRateLimiter(rps, burst int) *rateLimiter {
 	l := &rateLimiter{buckets: make(map[string]*bucket), rps: float64(rps), burst: float64(burst)}
 	go l.janitor()
@@ -33,14 +38,24 @@ func newRateLimiter(rps, burst int) *rateLimiter {
 func (l *rateLimiter) janitor() {
 	t := time.NewTicker(5 * time.Minute)
 	for range t.C {
-		cutoff := time.Now().Add(-10 * time.Minute)
 		l.mu.Lock()
+		cutoff := time.Now().Add(-10 * time.Minute)
 		for k, b := range l.buckets {
 			if b.last.Before(cutoff) {
 				delete(l.buckets, k)
 			}
 		}
 		l.mu.Unlock()
+	}
+}
+
+// pruneLocked drops buckets idle for over a minute. Caller must hold l.mu.
+func (l *rateLimiter) pruneLocked(now time.Time) {
+	cutoff := now.Add(-time.Minute)
+	for k, b := range l.buckets {
+		if b.last.Before(cutoff) {
+			delete(l.buckets, k)
+		}
 	}
 }
 
@@ -51,6 +66,12 @@ func (l *rateLimiter) allow(key string) bool {
 	defer l.mu.Unlock()
 	b := l.buckets[key]
 	if b == nil {
+		if len(l.buckets) >= maxBuckets {
+			l.pruneLocked(now)
+			if len(l.buckets) >= maxBuckets {
+				l.buckets = make(map[string]*bucket, maxBuckets) // hard reset: bound memory
+			}
+		}
 		b = &bucket{tokens: l.burst, last: now}
 		l.buckets[key] = b
 	}

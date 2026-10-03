@@ -254,6 +254,31 @@ func TestPresign(t *testing.T) {
 	}
 }
 
+func TestPresignEncodesSpecialKeys(t *testing.T) {
+	s := newSvc(t)
+	ctx := context.Background()
+	if _, err := s.CreateBucket(ctx, "bk", false); err != nil {
+		t.Fatal(err)
+	}
+	// a key with a space and a slash — the minted URL must percent-encode it so it
+	// round-trips through the router back to the signed key.
+	put(t, s, userA, "bk", "a b/c.txt", "data")
+	path, _, err := s.Presign(ctx, userA, "bk", "a b/c.txt", time.Minute)
+	if err != nil {
+		t.Fatalf("presign: %v", err)
+	}
+	if !strings.Contains(path, "a%20b/c.txt") {
+		t.Fatalf("presign URL must encode the key, got %s", path)
+	}
+	// the signature itself still verifies against the raw (decoded) key
+	exp, sig := parseSigned(t, path)
+	if _, rc, err := s.GetSigned(ctx, "bk", "a b/c.txt", exp, sig); err != nil {
+		t.Fatalf("signed get with special key: %v", err)
+	} else {
+		rc.Close()
+	}
+}
+
 func TestDeleteBucketRemovesObjects(t *testing.T) {
 	s := newSvc(t)
 	ctx := context.Background()

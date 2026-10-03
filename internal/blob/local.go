@@ -16,10 +16,19 @@ import (
 // (temp file + rename) so a crash mid-write never leaves a torn object.
 type Local struct{ root string }
 
-// NewLocal creates the storage root (0700) and returns a Local store.
+// NewLocal creates the storage root (0700) and returns a Local store. It sweeps
+// any leftover temp files from a prior crash between write and rename (they are
+// never servable — they fail safeKey — but shouldn't accumulate).
 func NewLocal(root string) (*Local, error) {
 	if err := os.MkdirAll(root, 0o700); err != nil {
 		return nil, fmt.Errorf("create storage root: %w", err)
+	}
+	if entries, err := os.ReadDir(root); err == nil {
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), ".tmp-") {
+				_ = os.Remove(filepath.Join(root, e.Name()))
+			}
+		}
 	}
 	return &Local{root: root}, nil
 }

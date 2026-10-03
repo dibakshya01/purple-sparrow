@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/dibakshya01/purple-sparrow/internal/agent/advisor"
@@ -89,6 +90,11 @@ func TestE2E_Storage(t *testing.T) {
 	}
 	if ct := rec.Header().Get("Content-Type"); ct == "" {
 		t.Fatal("missing content-type on download")
+	}
+	// object bytes must be served with a sandbox CSP so attacker-uploaded HTML/SVG
+	// cannot run script on the API origin (stored-XSS defense).
+	if csp := rec.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "sandbox") {
+		t.Fatalf("object response must carry a sandbox CSP, got %q", csp)
 	}
 
 	// public bucket: anon can read

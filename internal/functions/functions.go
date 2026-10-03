@@ -40,20 +40,22 @@ var (
 const (
 	defaultTimeoutMS = 5000
 	maxTimeoutMS     = 60000
-	defaultMemoryMB  = 64
-	maxMemoryMB      = 256
+	defaultMemoryMB  = 64       // recorded in the metadata column; not a per-function cap
 	maxWasmBytes     = 32 << 20 // 32 MiB module cap
 )
 
 var slugRe = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,62}$`)
 
 // Function is a deployed function's metadata (secret *values* are never exposed).
+//
+// Note: memory is a process-wide cap (PS_FN_MAX_MEMORY_MB), not per-function —
+// wazero's memory limit is per-runtime — so no per-function memory field is
+// exposed, to avoid advertising isolation that does not exist.
 type Function struct {
 	ID          string   `json:"id"`
 	Slug        string   `json:"slug"`
 	Runtime     string   `json:"runtime"`
 	TimeoutMS   int      `json:"timeout_ms"`
-	MemoryMB    int      `json:"memory_mb"`
 	InvokeRoles []string `json:"invoke_roles"`
 	SecretNames []string `json:"secret_names"`
 	HasCode     bool     `json:"has_code"`
@@ -67,7 +69,6 @@ type Function struct {
 type CreateInput struct {
 	Slug        string            `json:"slug"`
 	TimeoutMS   int               `json:"timeout_ms"`
-	MemoryMB    int               `json:"memory_mb"`
 	InvokeRoles []string          `json:"invoke_roles"`
 	Secrets     map[string]string `json:"secrets"`
 }
@@ -100,7 +101,8 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Function, error) 
 		}
 	}
 	timeout := clamp(in.TimeoutMS, defaultTimeoutMS, 1, maxTimeoutMS)
-	memory := clamp(in.MemoryMB, defaultMemoryMB, 1, maxMemoryMB)
+	// memory_mb is recorded (column default) but not a per-function cap; see Function.
+	memory := defaultMemoryMB
 	if in.Secrets == nil {
 		in.Secrets = map[string]string{}
 	}
@@ -304,7 +306,6 @@ func rowToFunction(r data.Row) Function {
 		Slug:        str(r["slug"]),
 		Runtime:     str(r["runtime"]),
 		TimeoutMS:   int(asInt(r["timeout_ms"])),
-		MemoryMB:    int(asInt(r["memory_mb"])),
 		InvokeRoles: roles,
 		SecretNames: names,
 		HasCode:     asInt(r["has_code"]) == 1,

@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -232,7 +233,12 @@ func (s *Service) Put(ctx context.Context, p principal.Principal, bucket, key, c
 			id, bucket, key, size, contentType, etag, ownerArg, now, now)
 	}
 	if err != nil {
-		_ = s.store.Delete(ctx, id) // roll back bytes on metadata failure
+		// Only roll back bytes for a NEW object. On overwrite the blob was replaced
+		// in place; deleting it here would destroy the still-live object whose
+		// metadata row survived the failed UPDATE (silent data loss).
+		if existing == nil {
+			_ = s.store.Delete(ctx, id)
+		}
 		return Object{}, err
 	}
 	created := now
@@ -370,7 +376,11 @@ func (s *Service) Presign(ctx context.Context, p principal.Principal, bucket, ke
 	}
 	exp := time.Now().Add(ttl).Unix()
 	sig := s.sign(bucket, key, exp)
-	path = fmt.Sprintf("/v1/storage/%s/%s?exp=%d&sig=%s", bucket, key, exp, sig)
+	// Percent-encode each path segment (preserving '/') so a key containing ? # &
+	// or non-ASCII yields a valid URL that the handler decodes back to the same
+	// key — otherwise the signature would never match. Bucket names are validated
+	// to a safe charset already.
+	path = fmt.Sprintf("/v1/storage/%s/%s?exp=%d&sig=%s", bucket, encodeKeyPath(key), exp, sig)
 	return path, time.Unix(exp, 0).UTC().Format(time.RFC3339), nil
 }
 
@@ -443,6 +453,17 @@ func ParseTTL(s string) time.Duration {
 		return 5 * time.Minute
 	}
 	return time.Duration(n) * time.Second
+}
+
+// encodeKeyPath percent-encodes each '/'-separated segment of an object key,
+// preserving the separators, so the minted presign URL round-trips to the same
+// key through the router.
+func encodeKeyPath(key string) string {
+	segs := strings.Split(key, "/")
+	for i, s := range segs {
+		segs[i] = url.PathEscape(s)
+	}
+	return strings.Join(segs, "/")
 }
 
 func nowISO() string { return time.Now().UTC().Format(time.RFC3339Nano) }

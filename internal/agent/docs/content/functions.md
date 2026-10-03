@@ -27,7 +27,7 @@ GOOS=wasip1 GOARCH=wasm go build -o fn.wasm .
 
 | Method & path | Who | Purpose |
 |---|---|---|
-| `POST /v1/functions` | admin | Create metadata: `{"slug","invoke_roles":[…],"secrets":{…},"timeout_ms","memory_mb"}` |
+| `POST /v1/functions` | admin | Create metadata: `{"slug","invoke_roles":[…],"secrets":{…},"timeout_ms"}` |
 | `PUT /v1/functions/{slug}/code` | admin | Upload (or replace) the `.wasm` module (raw body) |
 | `GET /v1/functions` | admin | List functions (secret *values* are never returned) |
 | `GET /v1/functions/{slug}` | admin | Describe a function |
@@ -44,7 +44,8 @@ signed-in users.
 ## Limits
 
 - `timeout_ms` (default 5000, max 60000) — exceeding it returns `504 function_timeout`.
-- `memory_mb` — bounded by the server's `PS_FN_MAX_MEMORY_MB` (default 128).
+- Memory is a **process-wide** cap (`PS_FN_MAX_MEMORY_MB`, default 128), shared by
+  all functions — not a per-function limit.
 - Module size ≤ 32 MiB.
 
 ## Example

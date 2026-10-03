@@ -155,6 +155,12 @@ func streamObject(w http.ResponseWriter, obj storage.Object, rc io.ReadCloser) {
 	w.Header().Set("Content-Length", strconv.FormatInt(obj.Size, 10))
 	w.Header().Set("ETag", "\""+obj.ETag+"\"")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	// User-uploaded bytes are served from the API origin (which the dashboard also
+	// uses and where an admin key lives in sessionStorage). An uploaded text/html or
+	// SVG could otherwise run inline script on this origin. `sandbox` puts the
+	// response in an opaque origin with scripts disabled, and `default-src 'none'`
+	// blocks sub-resource loads — images/downloads still work, active content cannot.
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
 	w.WriteHeader(http.StatusOK)
 	_, _ = io.Copy(w, rc)
 }

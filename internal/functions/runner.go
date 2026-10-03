@@ -88,9 +88,11 @@ func (w *Wazero) compiled(ctx context.Context, id, etag string, load func() ([]b
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrModuleInvalid, err)
 	}
-	if old, ok := w.cache[id]; ok {
-		_ = old.mod.Close(ctx)
-	}
+	// Replace the cache entry WITHOUT eagerly closing the old compiled module: an
+	// in-flight InstantiateModule (which runs after releasing this lock) may still
+	// reference it, and Close would make that instantiation fail with a spurious
+	// 500. The old module's native executable is reclaimed by GC once nothing
+	// references it; the runtime's own Close frees everything on shutdown.
 	w.cache[id] = cached{etag: etag, mod: mod}
 	return mod, nil
 }

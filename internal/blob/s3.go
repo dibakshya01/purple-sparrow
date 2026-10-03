@@ -1,6 +1,7 @@
 package blob
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -64,13 +65,11 @@ func (s *S3) objectURL(key string) string {
 }
 
 func (s *S3) Put(ctx context.Context, key string, r io.Reader) (int64, string, error) {
-	// Stream the body while hashing it; the etag is the sha256 of the bytes (same
-	// definition as the local adapter). We buffer to compute the content hash is
-	// avoided by using UNSIGNED-PAYLOAD for the signature, but we still need the
-	// sha256 for our etag, so we hash as we stream via a TeeReader is not possible
-	// with an unknown length — instead we read fully into memory-bounded pieces.
-	// Objects routed through PS are size-capped at the HTTP layer, so buffering the
-	// body here is acceptable and keeps the signature simple and correct.
+	// SigV4 header signing needs the exact payload hash up front, and we also need
+	// the sha256 as our etag, so the body is buffered once here. Objects are
+	// size-capped at the HTTP layer (PS_STORAGE_MAX_OBJECT_BYTES), which bounds this
+	// allocation. (A streaming SigV4 chunked upload would remove the buffer; it's a
+	// known scale limitation, not a correctness issue.) The local adapter streams.
 	buf, err := io.ReadAll(r)
 	if err != nil {
 		return 0, "", err
@@ -78,7 +77,8 @@ func (s *S3) Put(ctx context.Context, key string, r io.Reader) (int64, string, e
 	sum := sha256.Sum256(buf)
 	etag := hex.EncodeToString(sum[:])
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, s.objectURL(key), strings.NewReader(string(buf)))
+	// bytes.NewReader wraps the buffer without copying (unlike strings.NewReader(string(buf))).
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, s.objectURL(key), bytes.NewReader(buf))
 	if err != nil {
 		return 0, "", err
 	}

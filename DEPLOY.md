@@ -21,7 +21,11 @@ different artifact.
 - **Put TLS in front.** Terminate HTTPS at a load balancer / reverse proxy;
   Purple Sparrow sets HSTS when it sees `X-Forwarded-Proto: https`.
 - **Rate limiting** is on by default (100 rps/IP, burst 200). Tune with
-  `PS_RATE_LIMIT_RPS` / `PS_RATE_LIMIT_BURST` (0 disables).
+  `PS_RATE_LIMIT_RPS` / `PS_RATE_LIMIT_BURST` (0 disables). It keys on the socket
+  peer address (never a spoofable `X-Forwarded-For`). **Behind a reverse proxy**
+  every request appears to come from the proxy's IP, so the limit becomes global
+  rather than per-client — set a high limit (or disable it and rate-limit at the
+  proxy) in that topology.
 
 ## T0 — Solo (single binary)
 

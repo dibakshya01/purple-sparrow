@@ -88,7 +88,9 @@ func (s *Server) eventVisible(ctx context.Context, p principal.Principal, e even
 	if !ok {
 		cs, err := s.deps.Catalog.Columns(ctx, e.Table)
 		if err != nil {
-			colsCache[e.Table] = nil
+			// Transient error: fail closed for this event, but DON'T cache the
+			// failure — a one-off hiccup must not blind the subscriber to this
+			// table for the whole connection.
 			return false
 		}
 		for _, c := range cs {
