@@ -6,6 +6,7 @@ import (
 
 	"github.com/dibakshya01/purple-sparrow/internal/apierr"
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
+	"github.com/dibakshya01/purple-sparrow/internal/functions"
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
 	"github.com/dibakshya01/purple-sparrow/internal/records"
 	"github.com/dibakshya01/purple-sparrow/internal/storage"
@@ -95,6 +96,33 @@ func mapDomainError(err error) *apierr.Error {
 		return apierr.New(http.StatusBadRequest, "validation_failed", err.Error(),
 			"Bucket names are 2-63 lowercase alphanumeric chars (. _ - allowed). Object keys avoid '..' and empty segments.",
 			"/docs/storage")
+
+	case errors.Is(err, functions.ErrFunctionNotFound):
+		return apierr.New(http.StatusNotFound, "function_not_found", "No function with that slug exists.",
+			"Deploy it with POST /v1/functions then PUT /v1/functions/{slug}/code, or list with GET /v1/functions.",
+			"/docs/functions", "GET /v1/functions")
+	case errors.Is(err, functions.ErrFunctionExists):
+		return apierr.New(http.StatusConflict, "function_exists", "A function with that slug already exists.",
+			"Upload new code to it (PUT /v1/functions/{slug}/code) or choose another slug.", "/docs/functions")
+	case errors.Is(err, functions.ErrNoCode):
+		return apierr.New(http.StatusConflict, "function_no_code", "The function has no code deployed yet.",
+			"Upload a wasm module with PUT /v1/functions/{slug}/code before invoking it.", "/docs/functions")
+	case errors.Is(err, functions.ErrDenied):
+		return apierr.New(http.StatusForbidden, "function_denied", "Your role is not permitted to invoke this function.",
+			"Invocation is deny-by-default. Ask an admin to add your role to the function's invoke_roles.",
+			"/docs/functions")
+	case errors.Is(err, functions.ErrTimeout):
+		return apierr.New(http.StatusGatewayTimeout, "function_timeout", "The function exceeded its time limit.",
+			"Reduce the work the function does, or raise its timeout_ms (bounded by the server max).",
+			"/docs/functions")
+	case errors.Is(err, functions.ErrInvalidModule):
+		return apierr.New(http.StatusBadRequest, "invalid_module", err.Error(),
+			"Upload a valid WebAssembly (WASI/wasip1) module. Compile e.g. with GOOS=wasip1 GOARCH=wasm go build.",
+			"/docs/functions")
+	case errors.Is(err, functions.ErrInvalidSlug), errors.Is(err, functions.ErrInvalidConfig):
+		return apierr.New(http.StatusBadRequest, "validation_failed", err.Error(),
+			"Slugs are 2-63 lowercase alphanumeric chars with -; invoke_roles ⊆ {anon,authenticated,project_admin}.",
+			"/docs/functions")
 
 	default:
 		return apierr.Internal("").WithInternal(err)

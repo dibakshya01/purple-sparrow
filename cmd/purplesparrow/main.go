@@ -25,6 +25,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/config"
 	"github.com/dibakshya01/purple-sparrow/internal/data"
 	"github.com/dibakshya01/purple-sparrow/internal/data/migrate"
+	"github.com/dibakshya01/purple-sparrow/internal/functions"
 	"github.com/dibakshya01/purple-sparrow/internal/httpapi"
 	"github.com/dibakshya01/purple-sparrow/internal/idgen"
 	"github.com/dibakshya01/purple-sparrow/internal/mcp"
@@ -196,6 +197,15 @@ func run() error {
 		return err
 	}
 
+	// Functions (M7): WASM (WASI) modules run in a wazero sandbox; module bytes
+	// reuse the blob store. The runtime is closed on shutdown.
+	fnRunner, err := functions.NewWazero(context.Background(), cfg.FnMaxMemoryMB)
+	if err != nil {
+		return err
+	}
+	defer fnRunner.Close(context.Background())
+	fnSvc := functions.New(eng, store, fnRunner)
+
 	// Seed an admin API key. For the solo tier we generate an ephemeral one and log
 	// it (local-dev convenience). For any non-solo tier we refuse to boot without an
 	// explicit key rather than mint-and-log a live admin credential: a per-restart
@@ -215,15 +225,16 @@ func run() error {
 	}
 
 	srv := httpapi.New(cfg, logger, httpapi.Deps{
-		Catalog: cat,
-		Records: rec,
-		Policy:  pol,
-		Meta:    mta,
-		Auth:    authSvc,
-		Docs:    agentdocs.New(),
-		Memory:  memory.New(eng),
-		Advisor: advisor.New(cat, pol),
-		Storage: storageSvc,
+		Catalog:   cat,
+		Records:   rec,
+		Policy:    pol,
+		Meta:      mta,
+		Auth:      authSvc,
+		Docs:      agentdocs.New(),
+		Memory:    memory.New(eng),
+		Advisor:   advisor.New(cat, pol),
+		Storage:   storageSvc,
+		Functions: fnSvc,
 	})
 	httpServer := &http.Server{
 		Addr:    cfg.Addr,

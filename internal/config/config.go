@@ -64,6 +64,10 @@ type Config struct {
 	// S3* configure the S3-compatible adapter (used when StorageBackend == "s3").
 	// Secret/access keys carry credentials — never logged.
 	S3Endpoint, S3Region, S3Bucket, S3AccessKey, S3SecretKey string
+
+	// --- Functions (M7) ---
+	// FnMaxMemoryMB caps the WASM runtime's linear memory (default 128).
+	FnMaxMemoryMB int
 }
 
 // StoragePath returns the local blob root within the data dir.
@@ -88,6 +92,7 @@ func Defaults() Config {
 		Tier:                  TierAuto,
 		StorageBackend:        "local",
 		StorageMaxObjectBytes: 100 << 20, // 100 MiB
+		FnMaxMemoryMB:         128,
 	}
 }
 
@@ -148,6 +153,14 @@ func Load() (Config, error) {
 	c.S3Bucket = env("PS_S3_BUCKET")
 	c.S3AccessKey = env("PS_S3_ACCESS_KEY_ID")
 	c.S3SecretKey = env("PS_S3_SECRET_ACCESS_KEY")
+
+	if v := env("PS_FN_MAX_MEMORY_MB"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			return c, fmt.Errorf("PS_FN_MAX_MEMORY_MB %q is invalid; use a positive integer (MiB)", v)
+		}
+		c.FnMaxMemoryMB = n
+	}
 
 	return c, c.Validate()
 }

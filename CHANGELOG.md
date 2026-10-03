@@ -27,6 +27,10 @@ SemVer from the first tagged release.
   adapter (solo tier) and an S3-compatible adapter (scale tiers, pure-Go SigV4, no
   AWS SDK). Buckets + objects with deny-by-default, ownership-scoped access;
   public buckets; HMAC presigned URLs; per-object size caps.
+- **M7 — Edge functions.** Deploy WebAssembly (WASI) modules run in an in-process
+  `wazero` sandbox — no filesystem, network, subprocess, or host env; stdin/stdout
+  request/response; explicit secret injection; per-call timeout and memory cap;
+  deny-by-default invocation by role. Pure-Go, no CGO.
 - Launch website (GitHub Pages) and README deck.
 
 ### Security

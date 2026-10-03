@@ -18,6 +18,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/auth"
 	"github.com/dibakshya01/purple-sparrow/internal/catalog"
 	"github.com/dibakshya01/purple-sparrow/internal/config"
+	"github.com/dibakshya01/purple-sparrow/internal/functions"
 	"github.com/dibakshya01/purple-sparrow/internal/policy"
 	"github.com/dibakshya01/purple-sparrow/internal/records"
 	"github.com/dibakshya01/purple-sparrow/internal/reqid"
@@ -28,15 +29,16 @@ import (
 // Deps are the service dependencies for the data plane. When Catalog is nil the
 // data routes are not mounted (M0-only server, e.g. in tests).
 type Deps struct {
-	Catalog *catalog.Service
-	Records *records.Service
-	Policy  *policy.Service
-	Meta    *meta.Service
-	Auth    *auth.Service
-	Docs    *agentdocs.Service
-	Memory  *memory.Service
-	Advisor *advisor.Service
-	Storage *storage.Service
+	Catalog   *catalog.Service
+	Records   *records.Service
+	Policy    *policy.Service
+	Meta      *meta.Service
+	Auth      *auth.Service
+	Docs      *agentdocs.Service
+	Memory    *memory.Service
+	Advisor   *advisor.Service
+	Storage   *storage.Service
+	Functions *functions.Service
 }
 
 // Server owns the HTTP handler and its request-scoped dependencies.
@@ -101,6 +103,9 @@ func (s *Server) buildRouter() http.Handler {
 			s.mountAgentRoutes(g)
 			if s.deps.Storage != nil {
 				s.mountStorageRoutes(g)
+			}
+			if s.deps.Functions != nil {
+				s.mountFunctionRoutes(g)
 			}
 		})
 	}
