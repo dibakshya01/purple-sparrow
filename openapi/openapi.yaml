@@ -1,88 +1,547 @@
-# Purple Sparrow API — OpenAPI 3.1 source of truth (ADR-0004).
-# M0 seeds the document and the error-envelope schema. From M1, handler types and
-# the MCP tool surface are generated/derived from this file (`make generate`).
+# Purple Sparrow API — OpenAPI 3.1 contract (ADR-0004).
+# The source of truth for the REST surface. The same surface is exposed as MCP
+# tools (purplesparrow mcp). Served at GET /openapi.yaml.
 openapi: 3.1.0
 info:
   title: Purple Sparrow API
-  version: 0.0.0
-  description: Agent-native backend platform. REST surface; the same surface is exposed as MCP tools.
+  version: 0.1.0
+  description: >
+    Agent-native backend-as-a-service. Data + a deny-by-default policy engine,
+    auth, object storage, edge functions (WASM), realtime (SSE), an agent layer,
+    and an embedded dashboard — in a single Go binary. Every non-2xx response is
+    the agent error envelope (code / message / remediation / next_actions / doc_ref).
   license:
     name: Apache-2.0
     identifier: Apache-2.0
-
 servers:
   - url: http://127.0.0.1:8787
+    description: Local (solo tier) default
+
+security:
+  - bearerAuth: []
+
+tags:
+  - { name: Health }
+  - { name: Auth }
+  - { name: Tables, description: "Admin-only table (schema) management." }
+  - { name: Records, description: "Policy-enforced CRUD; deny-by-default." }
+  - { name: Policies, description: "Admin-only access rules compiled to parameterized SQL." }
+  - { name: Storage, description: "Buckets and objects; ownership-scoped." }
+  - { name: Functions, description: "Edge functions as sandboxed WASM (WASI)." }
+  - { name: Realtime, description: "Row-change events over SSE, policy-filtered." }
+  - { name: Agent, description: "Introspection, docs-over-API, memory, advisor." }
 
 paths:
   /healthz:
     get:
+      tags: [Health]
       operationId: getHealth
       summary: Liveness probe
+      security: []
       responses:
         "200":
           description: Service is alive
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  status: { type: string, const: ok }
+              schema: { type: object, properties: { status: { type: string, const: ok } } }
   /readyz:
     get:
+      tags: [Health]
       operationId: getReady
-      summary: Readiness probe
+      summary: Readiness probe (503 while draining)
+      security: []
       responses:
-        "200":
-          description: Ready to serve
-        "503":
-          description: Not ready
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+        "200": { description: Ready }
+        "503": { $ref: "#/components/responses/Error" }
   /v1:
     get:
+      tags: [Health]
       operationId: getServiceInfo
-      summary: Service metadata (name, version, tier)
+      summary: Service info and route index
+      security: []
+      responses:
+        "200": { description: Service metadata }
+
+  /v1/auth/signup:
+    post:
+      tags: [Auth]
+      operationId: signup
+      summary: Create a user (email + password) and return tokens
+      security: []
+      requestBody: { $ref: "#/components/requestBodies/Credentials" }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/TokenPair" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Exchange email + password for tokens
+      security: []
+      requestBody: { $ref: "#/components/requestBodies/Credentials" }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TokenPair" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+  /v1/auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refresh
+      summary: Rotate a single-use refresh token for a new token pair
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [refresh_token], properties: { refresh_token: { type: string } } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/TokenPair" } } } }
+        "401": { $ref: "#/components/responses/Error" }
+  /v1/auth/me:
+    get:
+      tags: [Auth]
+      operationId: getMe
+      summary: The current principal (from the presented token/key)
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+  /v1/auth/api-keys:
+    post:
+      tags: [Auth]
+      operationId: createApiKey
+      summary: Mint an API key (admin). The plaintext is returned once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties: { name: { type: string }, roles: { type: array, items: { type: string } } }
+      responses:
+        "201": { description: Created (plaintext key returned once) }
+        "403": { $ref: "#/components/responses/Error" }
+    get:
+      tags: [Auth]
+      operationId: listApiKeys
+      summary: List API-key metadata (admin; never the secret)
+      responses:
+        "200": { description: OK }
+        "403": { $ref: "#/components/responses/Error" }
+  /.well-known/jwks.json:
+    get:
+      tags: [Auth]
+      operationId: getJwks
+      summary: Public JWKS for verifying RS256 access tokens
+      security: []
+      responses:
+        "200": { description: JWKS document }
+
+  /v1/tables:
+    post:
+      tags: [Tables]
+      operationId: createTable
+      summary: Create a user table (admin). id and created_at are added automatically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, columns]
+              properties:
+                name: { type: string, pattern: "^[a-z][a-z0-9_]*$" }
+                columns: { type: array, items: { $ref: "#/components/schemas/Column" } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Table" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+    get:
+      tags: [Tables]
+      operationId: listTables
+      summary: List table names (admin)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" } }
+  /v1/tables/{table}:
+    parameters: [{ $ref: "#/components/parameters/Table" }]
+    get:
+      tags: [Tables]
+      operationId: describeTable
+      summary: Describe a table — columns and policies (admin)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Tables]
+      operationId: dropTable
+      summary: Drop a table (admin)
+      responses: { "204": { description: Deleted }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+
+  /v1/tables/{table}/records:
+    parameters: [{ $ref: "#/components/parameters/Table" }]
+    post:
+      tags: [Records]
+      operationId: insertRecords
+      summary: Insert one record (object) or many (array). Policy WITH CHECK applies.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - { type: object, additionalProperties: true }
+                - { type: array, items: { type: object, additionalProperties: true } }
+      responses:
+        "201": { description: Created }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+    get:
+      tags: [Records]
+      operationId: queryRecords
+      summary: "Query records (row-filtered by policy). PostgREST-style filters: ?col=op.value"
+      parameters:
+        - { name: select, in: query, schema: { type: string }, description: "Comma-separated columns" }
+        - { name: order, in: query, schema: { type: string }, description: "col or col.desc, comma-separated" }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: offset, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { records: { type: array, items: { type: object, additionalProperties: true } } } } } } }
+        "403": { $ref: "#/components/responses/Error" }
+  /v1/tables/{table}/records/{id}:
+    parameters: [{ $ref: "#/components/parameters/Table" }, { $ref: "#/components/parameters/Id" }]
+    get:
+      tags: [Records]
+      operationId: getRecord
+      summary: Get one record by id (policy-filtered)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+    patch:
+      tags: [Records]
+      operationId: updateRecord
+      summary: Patch a record (USING targets the row, WITH CHECK validates the result)
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { "200": { description: OK }, "400": { $ref: "#/components/responses/Error" }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Records]
+      operationId: deleteRecord
+      summary: Delete a record within the policy USING scope
+      responses: { "204": { description: Deleted }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+
+  /v1/policies:
+    post:
+      tags: [Policies]
+      operationId: createPolicy
+      summary: Create an access policy (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PolicyInput" }
+      responses: { "201": { description: Created }, "400": { $ref: "#/components/responses/Error" }, "403": { $ref: "#/components/responses/Error" } }
+  /v1/tables/{table}/policies:
+    parameters: [{ $ref: "#/components/parameters/Table" }]
+    get:
+      tags: [Policies]
+      operationId: listPolicies
+      summary: List a table's policies (admin)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" } }
+
+  /meta:
+    get:
+      tags: [Agent]
+      operationId: getMeta
+      summary: One-call introspection — tables, columns, policies, counts (admin)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" } }
+  /advisor:
+    get:
+      tags: [Agent]
+      operationId: getAdvisor
+      summary: Lint the configuration for risky/missing rules (admin)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" } }
+  /docs:
+    get:
+      tags: [Agent]
+      operationId: listDocs
+      summary: List documentation slugs served over the API
+      security: []
+      responses: { "200": { description: OK } }
+  /docs/{slug}:
+    get:
+      tags: [Agent]
+      operationId: getDoc
+      summary: Fetch a documentation page (markdown)
+      security: []
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: OK, content: { text/markdown: {} } }, "404": { $ref: "#/components/responses/Error" } }
+  /openapi.yaml:
+    get:
+      tags: [Agent]
+      operationId: getOpenapi
+      summary: This OpenAPI contract
+      security: []
+      responses: { "200": { description: OK, content: { application/yaml: {} } } }
+  /v1/memory/{namespace}:
+    parameters: [{ name: namespace, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [Agent]
+      operationId: listMemory
+      summary: List per-subject memory keys in a namespace
+      responses: { "200": { description: OK }, "401": { $ref: "#/components/responses/Error" } }
+  /v1/memory/{namespace}/{key}:
+    parameters:
+      - { name: namespace, in: path, required: true, schema: { type: string } }
+      - { name: key, in: path, required: true, schema: { type: string } }
+    put:
+      tags: [Agent]
+      operationId: setMemory
+      summary: Store a per-subject memory value (JSON)
+      requestBody: { required: true, content: { application/json: { schema: {} } } }
+      responses: { "200": { description: OK }, "401": { $ref: "#/components/responses/Error" } }
+    get:
+      tags: [Agent]
+      operationId: getMemory
+      summary: Read a per-subject memory value
+      responses: { "200": { description: OK }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Agent]
+      operationId: deleteMemory
+      summary: Delete a per-subject memory value
+      responses: { "204": { description: Deleted } }
+
+  /v1/storage/buckets:
+    post:
+      tags: [Storage]
+      operationId: createBucket
+      summary: Create a bucket (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name], properties: { name: { type: string }, public: { type: boolean } } }
+      responses: { "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Bucket" } } } }, "403": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+    get:
+      tags: [Storage]
+      operationId: listBuckets
+      summary: List buckets (admin)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" } }
+  /v1/storage/buckets/{bucket}:
+    delete:
+      tags: [Storage]
+      operationId: deleteBucket
+      summary: Delete a bucket and all its objects (admin)
+      parameters: [{ $ref: "#/components/parameters/Bucket" }]
+      responses: { "204": { description: Deleted }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+  /v1/storage/{bucket}:
+    get:
+      tags: [Storage]
+      operationId: listObjects
+      summary: List objects you own in a bucket (admin sees all)
+      parameters: [{ $ref: "#/components/parameters/Bucket" }]
+      responses: { "200": { description: OK }, "404": { $ref: "#/components/responses/Error" } }
+  /v1/storage/{bucket}/{key}:
+    parameters:
+      - { $ref: "#/components/parameters/Bucket" }
+      - { name: key, in: path, required: true, schema: { type: string }, description: "Object key (may contain slashes)" }
+    put:
+      tags: [Storage]
+      operationId: putObject
+      summary: Upload (or overwrite) an object (authenticated; becomes the owner)
+      requestBody: { required: true, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+      responses: { "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/StorageObject" } } } }, "401": { $ref: "#/components/responses/Error" }, "413": { $ref: "#/components/responses/Error" } }
+    get:
+      tags: [Storage]
+      operationId: getObject
+      summary: Download the bytes; ?presign=SECONDS mints a signed URL; ?exp&sig downloads via one
+      parameters:
+        - { name: presign, in: query, required: false, schema: { type: integer }, description: "Mint a signed URL valid this many seconds (owner/admin)" }
+        - { name: exp, in: query, required: false, schema: { type: integer } }
+        - { name: sig, in: query, required: false, schema: { type: string } }
+      responses: { "200": { description: Object bytes or a signed-URL document }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Storage]
+      operationId: deleteObject
+      summary: Delete an object (owner or admin)
+      responses: { "204": { description: Deleted }, "403": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+
+  /v1/functions:
+    post:
+      tags: [Functions]
+      operationId: createFunction
+      summary: Deploy function metadata (admin). Upload code separately.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FunctionInput" }
+      responses: { "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Function" } } } }, "400": { $ref: "#/components/responses/Error" }, "403": { $ref: "#/components/responses/Error" }, "409": { $ref: "#/components/responses/Error" } }
+    get:
+      tags: [Functions]
+      operationId: listFunctions
+      summary: List functions (admin; secret values never returned)
+      responses: { "200": { description: OK }, "403": { $ref: "#/components/responses/Error" } }
+  /v1/functions/{slug}:
+    parameters: [{ $ref: "#/components/parameters/Slug" }]
+    get:
+      tags: [Functions]
+      operationId: getFunction
+      summary: Describe a function (admin)
+      responses: { "200": { description: OK }, "404": { $ref: "#/components/responses/Error" } }
+    delete:
+      tags: [Functions]
+      operationId: deleteFunction
+      summary: Delete a function and its code (admin)
+      responses: { "204": { description: Deleted }, "404": { $ref: "#/components/responses/Error" } }
+  /v1/functions/{slug}/code:
+    put:
+      tags: [Functions]
+      operationId: uploadFunctionCode
+      summary: Upload (or replace) the WASM module (admin; raw body, WASI/wasip1)
+      parameters: [{ $ref: "#/components/parameters/Slug" }]
+      requestBody: { required: true, content: { application/wasm: { schema: { type: string, format: binary } } } }
+      responses: { "200": { description: OK }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" } }
+  /v1/fn/{slug}:
+    parameters: [{ $ref: "#/components/parameters/Slug" }]
+    post:
+      tags: [Functions]
+      operationId: invokeFunction
+      summary: Invoke a function (authorized by invoke_roles). Body → stdin, stdout → response.
+      requestBody: { required: false, content: { "*/*": { schema: { type: string, format: binary } } } }
+      responses:
+        "200": { description: The function's stdout }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "502": { $ref: "#/components/responses/Error" }
+        "504": { $ref: "#/components/responses/Error" }
+    get:
+      tags: [Functions]
+      operationId: invokeFunctionGet
+      summary: Invoke a function via GET
+      responses: { "200": { description: The function's stdout } }
+
+  /v1/realtime:
+    get:
+      tags: [Realtime]
+      operationId: subscribeRealtime
+      summary: Subscribe to row-change events over Server-Sent Events (policy-filtered per subscriber)
+      parameters:
+        - { name: table, in: query, required: false, schema: { type: string }, description: "Narrow to one table" }
       responses:
         "200":
-          description: Service metadata
+          description: An event stream
           content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  name: { type: string }
-                  version: { type: string }
-                  tier: { type: string }
-                  docs: { type: string }
+            text/event-stream:
+              schema: { $ref: "#/components/schemas/Event" }
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: "An API key (ps_sk_…) or an RS256 access token as `Authorization: Bearer <value>` (or `X-API-Key`). Omit to act as anon."
+  parameters:
+    Table: { name: table, in: path, required: true, schema: { type: string } }
+    Id: { name: id, in: path, required: true, schema: { type: string } }
+    Bucket: { name: bucket, in: path, required: true, schema: { type: string } }
+    Slug: { name: slug, in: path, required: true, schema: { type: string } }
+  requestBodies:
+    Credentials:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties: { email: { type: string, format: email }, password: { type: string, format: password } }
+  responses:
+    Error:
+      description: Agent error envelope
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
   schemas:
     ErrorEnvelope:
       type: object
-      description: The agent-native error envelope (ADR-0006). Returned on every non-2xx.
-      required: [error]
       properties:
         error:
           type: object
           required: [code, message]
           properties:
-            code:
-              type: string
-              description: Stable, machine-readable error code.
-            message:
-              type: string
-              description: Human-readable summary (never contains internal detail).
-            remediation:
-              type: string
-              description: How to fix it — written for an agent to act on.
-            next_actions:
-              type: array
-              items: { type: string }
-              description: Concrete next steps (often tool/endpoint calls).
-            doc_ref:
-              type: string
-              description: Path into the docs for this error.
-            request_id:
-              type: string
-              description: Correlates with server logs and the X-Request-Id header.
+            code: { type: string, example: policy_denied }
+            message: { type: string }
+            remediation: { type: string }
+            next_actions: { type: array, items: { type: string } }
+            doc_ref: { type: string }
+            request_id: { type: string }
+    Column:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string }
+        type: { type: string, enum: [text, integer, real, boolean, timestamp, uuid, json] }
+        nullable: { type: boolean }
+        unique: { type: boolean }
+    Table:
+      type: object
+      properties:
+        name: { type: string }
+        columns: { type: array, items: { $ref: "#/components/schemas/Column" } }
+        created_at: { type: string }
+    PolicyInput:
+      type: object
+      required: [table, action, roles]
+      properties:
+        table: { type: string }
+        action: { type: string, enum: [select, insert, update, delete] }
+        roles: { type: array, items: { type: string, enum: [anon, authenticated, project_admin] } }
+        using: { type: string, description: "SQL-like row predicate (select/update/delete)" }
+        check: { type: string, description: "WITH CHECK predicate (insert/update)" }
+    TokenPair:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type: { type: string, const: Bearer }
+        expires_in: { type: integer }
+    Bucket:
+      type: object
+      properties: { name: { type: string }, public: { type: boolean }, created_at: { type: string } }
+    StorageObject:
+      type: object
+      properties:
+        id: { type: string }
+        bucket: { type: string }
+        key: { type: string }
+        size: { type: integer }
+        content_type: { type: string }
+        etag: { type: string }
+        owner_id: { type: string }
+        created_at: { type: string }
+        updated_at: { type: string }
+    FunctionInput:
+      type: object
+      required: [slug]
+      properties:
+        slug: { type: string, pattern: "^[a-z0-9][a-z0-9-]{1,62}$" }
+        timeout_ms: { type: integer, default: 5000, maximum: 60000 }
+        invoke_roles: { type: array, items: { type: string, enum: [anon, authenticated, project_admin] }, description: "Empty = admin-only" }
+        secrets: { type: object, additionalProperties: { type: string }, description: "Injected as env; values never returned" }
+    Function:
+      type: object
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        runtime: { type: string, const: wasi }
+        timeout_ms: { type: integer }
+        invoke_roles: { type: array, items: { type: string } }
+        secret_names: { type: array, items: { type: string } }
+        has_code: { type: boolean }
+        etag: { type: string }
+        size: { type: integer }
+        created_at: { type: string }
+        updated_at: { type: string }
+    Event:
+      type: object
+      properties:
+        type: { type: string, enum: [insert, update, delete] }
+        table: { type: string }
+        id: { type: string }
+        row: { type: object, additionalProperties: true }
+        at: { type: string }

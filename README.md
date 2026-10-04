@@ -98,6 +98,7 @@ Agents (MCP · CLI · REST)
 - **Agent layer** — docs-over-API, per-subject memory, an advisor for risky config.
 - **Dashboard** — a dependency-free admin console embedded in the binary, served at `/`.
 - **MCP + CLI** — the whole surface as agent tools; `serve` / `mcp` / `mcp-config` / `version`.
+- **OpenAPI contract** — the full REST surface is described in OpenAPI 3.1, served at `GET /openapi.yaml` and kept in lock-step with the code by a route-parity test.
 
 ## Status — honest about limits
 

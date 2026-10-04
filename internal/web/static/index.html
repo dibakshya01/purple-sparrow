@@ -340,7 +340,7 @@ route('connect', async (main)=>{
   main.append(h('pre',{}, JSON.stringify(cfg,null,2)));
   main.append(h('div',{class:'sub'},'Or run the server\'s built-in helper: '), h('pre',{}, 'purplesparrow mcp-config'));
   main.append(h('h2',{},'Docs over the API'));
-  main.append(h('div',{class:'sub'},'The backend serves its own docs so an agent can learn it: '), h('pre',{}, 'GET /docs\nGET /docs/getting-started\nGET /docs/policies'));
+  main.append(h('div',{class:'sub'},'The backend serves its own docs and contract so an agent can learn it: '), h('pre',{}, 'GET /docs\nGET /docs/getting-started\nGET /docs/policies\nGET /openapi.yaml   (full OpenAPI 3.1 contract)'));
   main.append(h('h2',{},'Session'));
   main.append(h('div',{class:'row'}, h('span',{class:'muted'},'Signed in to '+esc(S.base)), h('button',{class:'btn ghost sm',onclick:disconnect},'Sign out')));
 });

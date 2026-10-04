@@ -46,6 +46,9 @@ end-to-end, and hardened.
   conditional HSTS; a non-root distroless Docker image; a three-tier deploy guide
   (`DEPLOY.md`) with a Kubernetes manifest; a `scripts/smoke.sh` end-to-end check;
   goreleaser multi-platform build config.
+- **OpenAPI 3.1 contract** (ADR-0004): the full REST surface documented in
+  `openapi/openapi.yaml`, served at `GET /openapi.yaml`, and held in lock-step with
+  the code by a route-parity test (every registered route must be in the spec).
 - Launch website (GitHub Pages) and README deck.
 
 ### Security

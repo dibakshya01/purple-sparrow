@@ -26,6 +26,7 @@ import (
 	"github.com/dibakshya01/purple-sparrow/internal/reqid"
 	"github.com/dibakshya01/purple-sparrow/internal/storage"
 	"github.com/dibakshya01/purple-sparrow/internal/web"
+	"github.com/dibakshya01/purple-sparrow/openapi"
 )
 
 // Deps are the service dependencies for the data plane. When Catalog is nil the
@@ -99,6 +100,13 @@ func (s *Server) buildRouter() http.Handler {
 	r.Get("/readyz", s.handleReadyz)
 	r.Get("/v1", s.handleServiceInfo)
 
+	// The OpenAPI 3.1 contract (ADR-0004) — public, so agents and tooling can
+	// discover the whole surface in one fetch.
+	r.Get("/openapi.yaml", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/yaml; charset=utf-8")
+		_, _ = w.Write(openapi.Spec)
+	})
+
 	if s.deps.Auth != nil {
 		// JWKS is public (no principal needed) so third parties can verify tokens.
 		r.Get("/.well-known/jwks.json", s.handleJWKS)
@@ -127,7 +135,7 @@ func (s *Server) buildRouter() http.Handler {
 		})
 	}
 
-	// Dashboard placeholder at exactly "/" only; other unmatched paths -> envelope.
+	// Admin dashboard at exactly "/" only; other unmatched paths -> envelope.
 	r.Get("/", web.Index().ServeHTTP)
 
 	return r
